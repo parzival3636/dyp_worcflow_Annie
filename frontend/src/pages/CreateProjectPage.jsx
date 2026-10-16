@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiPost } from '../hooks/useSnapshot';
-import { Shield, ArrowLeft, ArrowRight, Sparkles, FolderPlus, GitBranch, Terminal } from 'lucide-react';
+import { Shield, ArrowLeft, ArrowRight, Sparkles, FolderPlus, GitBranch } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function CreateProjectPage() {
@@ -57,34 +57,41 @@ export default function CreateProjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0D14] text-slate-100 flex flex-col">
-      {/* Header */}
-      <header className="border-b border-slate-800/80 bg-[#0E131F]/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div style={{ minHeight: '100vh', background: 'var(--bg, #0A0B0D)', color: 'var(--text-primary, #E8E6E1)', display: 'flex', flexDirection: 'column' }}>
+      {/* Top Header */}
+      <header style={{
+        borderBottom: '1px solid var(--border, #23272D)',
+        background: 'var(--surface, #111316)',
+        backdropFilter: 'blur(12px)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 40
+      }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link
             to="/projects"
-            className="flex items-center gap-2 text-xs text-slate-400 hover:text-white transition-colors"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-secondary, #8A8F98)', textDecoration: 'none', transition: 'color 0.15s ease' }}
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Projects
+            <ArrowLeft size={16} />
+            <span>Back to Projects</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-blue-400" />
-            <span className="text-xs font-semibold text-white">Pilot Provisioning</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #E8E6E1)' }}>
+            <Shield size={16} style={{ color: 'var(--accent, #FF6B3D)' }} />
+            <span>Pilot Project Provisioning</span>
           </div>
         </div>
       </header>
 
-      {/* Main container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
+      {/* Main Content */}
+      <main style={{ flex: 1, maxWidth: 900, width: '100%', margin: '0 auto', padding: '40px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 16 }}>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-              <FolderPlus className="w-6 h-6 text-blue-400" />
+            <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 10, letterSpacing: '-0.02em' }}>
+              <FolderPlus size={24} style={{ color: 'var(--accent, #FF6B3D)' }} />
               Provision New Project
             </h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p style={{ fontSize: 14, color: 'var(--text-secondary, #8A8F98)', marginTop: 6, marginBottom: 0 }}>
               Set up project specs. You will bind Telegram and GitHub in the next step.
             </p>
           </div>
@@ -92,24 +99,54 @@ export default function CreateProjectPage() {
           <button
             type="button"
             onClick={handleFillTemplate}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white text-xs border border-slate-700/50 transition-all"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              borderRadius: 8,
+              background: 'var(--surface-raised, #171A1E)',
+              border: '1px solid var(--border, #23272D)',
+              color: 'var(--text-primary, #E8E6E1)',
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            Fill Demo Template
+            <Sparkles size={14} style={{ color: '#F59E0B' }} />
+            <span>Fill Demo Template</span>
           </button>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+          <div style={{
+            marginBottom: 20,
+            padding: '12px 16px',
+            borderRadius: 8,
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            color: '#F87171',
+            fontSize: 13
+          }}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-[#111622]/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
+        <form onSubmit={handleSubmit}>
+          <div style={{
+            background: 'var(--surface, #111316)',
+            border: '1px solid var(--border, #23272D)',
+            borderRadius: 12,
+            padding: 24,
+            boxShadow: 'var(--shadow-floating, 0 8px 24px rgba(0,0,0,0.2))',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 20
+          }}>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                Project Name <span className="text-red-400">*</span>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary, #8A8F98)', marginBottom: 8 }}>
+                Project Name <span style={{ color: '#EF4444' }}>*</span>
               </label>
               <input
                 type="text"
@@ -117,12 +154,22 @@ export default function CreateProjectPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. PayFlow Core, FleetTrack IoT"
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  background: 'var(--bg, #0A0B0D)',
+                  border: '1px solid var(--border, #23272D)',
+                  color: 'var(--text-primary, #E8E6E1)',
+                  fontSize: 14,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary, #8A8F98)', marginBottom: 8 }}>
                 Executive Summary / Goal
               </label>
               <textarea
@@ -130,13 +177,25 @@ export default function CreateProjectPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What is this application solving? Who are the target users?"
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  background: 'var(--bg, #0A0B0D)',
+                  border: '1px solid var(--border, #23272D)',
+                  color: 'var(--text-primary, #E8E6E1)',
+                  fontSize: 14,
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  resize: 'vertical'
+                }}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary, #8A8F98)', marginBottom: 8 }}>
                   Functional Requirements (FR)
                 </label>
                 <textarea
@@ -144,12 +203,24 @@ export default function CreateProjectPage() {
                   value={functionalReqs}
                   onChange={(e) => setFunctionalReqs(e.target.value)}
                   placeholder="Key user stories, APIs, or data endpoints..."
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    background: 'var(--bg, #0A0B0D)',
+                    border: '1px solid var(--border, #23272D)',
+                    color: 'var(--text-primary, #E8E6E1)',
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary, #8A8F98)', marginBottom: 8 }}>
                   Non-Functional Reqs & Constraints
                 </label>
                 <textarea
@@ -157,14 +228,26 @@ export default function CreateProjectPage() {
                   value={nonFunctionalReqs}
                   onChange={(e) => setNonFunctionalReqs(e.target.value)}
                   placeholder="Performance benchmarks, latency, tech stack..."
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    background: 'var(--bg, #0A0B0D)',
+                    border: '1px solid var(--border, #23272D)',
+                    color: 'var(--text-primary, #E8E6E1)',
+                    fontSize: 14,
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-2">
-                <GitBranch className="w-3.5 h-3.5 text-blue-400" />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary, #8A8F98)', marginBottom: 8 }}>
+                <GitBranch size={14} style={{ color: 'var(--accent, #FF6B3D)' }} />
                 GitHub Repository URL (Optional)
               </label>
               <input
@@ -172,18 +255,35 @@ export default function CreateProjectPage() {
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
                 placeholder="https://github.com/organization/repo-name"
-                className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-slate-700/60 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 8,
+                  background: 'var(--bg, #0A0B0D)',
+                  border: '1px solid var(--border, #23272D)',
+                  color: 'var(--text-primary, #E8E6E1)',
+                  fontSize: 14,
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
               />
-              <p className="text-[11px] text-slate-500 mt-1">
+              <p style={{ fontSize: 12, color: 'var(--text-muted, #64748B)', marginTop: 6, marginBottom: 0 }}>
                 Pilot uses GitHub commit logs for automated AI verification and proof of work.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
             <Link
               to="/projects"
-              className="px-5 py-2.5 rounded-xl text-slate-400 hover:text-white text-sm transition-all"
+              style={{
+                padding: '10px 18px',
+                borderRadius: 8,
+                color: 'var(--text-secondary, #8A8F98)',
+                fontSize: 13,
+                textDecoration: 'none',
+                fontWeight: 500
+              }}
             >
               Cancel
             </Link>
@@ -191,10 +291,25 @@ export default function CreateProjectPage() {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm flex items-center gap-2 shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 20px',
+                borderRadius: 8,
+                background: 'var(--accent, #FF6B3D)',
+                color: '#FFFFFF',
+                border: 'none',
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1,
+                boxShadow: '0 2px 8px rgba(255, 107, 61, 0.3)',
+                transition: 'all 0.15s ease'
+              }}
             >
-              {loading ? 'Creating in Database...' : 'Create & Proceed to Setup'}
-              <ArrowRight className="w-4 h-4" />
+              <span>{loading ? 'Creating Project...' : 'Create & Proceed to Setup'}</span>
+              <ArrowRight size={16} />
             </button>
           </div>
         </form>

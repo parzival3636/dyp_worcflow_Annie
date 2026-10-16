@@ -168,10 +168,10 @@ export default function ProjectShell() {
               to={`/p/${code}`}
               end
               className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
-              title="Taiga Kanban Board"
+              title="Team Member Collaborative Kanban Board"
             >
               <LayoutGrid size={15} />
-              {sidebarExpanded && <span>Kanban Board</span>}
+              {sidebarExpanded && <span>Kanban Board (Team)</span>}
               {sidebarExpanded && <span className="sidebar-badge">{tasks.length}</span>}
             </NavLink>
 
@@ -214,10 +214,10 @@ export default function ProjectShell() {
             <NavLink
               to={`/p/${code}/chat`}
               className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
-              title="Guide AI Chat"
+              title="Live Telegram Stream & Guide AI Chat"
             >
               <Sparkles size={15} style={{ color: 'var(--status-needs_review)' }} />
-              {sidebarExpanded && <span>Guide AI Chat</span>}
+              {sidebarExpanded && <span>Live Chat & Guide</span>}
             </NavLink>
           </div>
 
@@ -260,10 +260,10 @@ export default function ProjectShell() {
             <NavLink
               to={`/p/${code}/guide`}
               className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
-              title="Guide Coordinator Radar"
+              title="Guide / Evaluator Radar & Executive Audit"
             >
               <Bot size={15} style={{ color: 'var(--status-needs_review)' }} />
-              {sidebarExpanded && <span>Guide Radar</span>}
+              {sidebarExpanded && <span>Guide / Evaluator Portal</span>}
             </NavLink>
           </div>
 

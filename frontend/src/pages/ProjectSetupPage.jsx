@@ -13,7 +13,9 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
-  UserPlus
+  UserPlus,
+  Bot,
+  LayoutGrid
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -106,228 +108,412 @@ export default function ProjectSetupPage() {
   const isConnected = tgStatus?.telegram_status === 'connected';
 
   return (
-    <div className="min-h-screen bg-[#0A0D14] text-slate-100 flex flex-col">
-      {/* Header */}
-      <header className="border-b border-slate-800/80 bg-[#0E131F]/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              to={`/p/${code}`}
-              className="text-xs text-blue-400 hover:text-blue-300 font-mono font-semibold px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20"
-            >
-              {code}
-            </Link>
-            <span className="text-sm font-semibold text-white">
-              {project?.name || 'Project Setup'}
-            </span>
-          </div>
-
-          <Link
-            to={`/p/${code}`}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium shadow-md transition-all"
-          >
-            <span>Open Dashboard</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-10 space-y-8">
+    <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 24px', display: 'flex', flexDirection: 'column', gap: 28 }}>
+      {/* Top Banner & Quick Links */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Project Coordination Setup</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--text-primary, #E8E6E1)', letterSpacing: '-0.02em' }}>
+            Project Coordination Setup
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary, #8A8F98)', marginTop: 4, marginBottom: 0 }}>
             Connect your team's Telegram group and invite collaborators to start live AI tracking.
           </p>
         </div>
 
-        {/* 1. Telegram Group Binding Section */}
-        <div className="bg-[#111622]/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800/60">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <Send className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-white">Telegram Group Coordination</h2>
-                <p className="text-xs text-slate-400">
-                  Pilot listens to your team chat, interprets standups, blockers, and progress
-                </p>
-              </div>
-            </div>
+        {/* Shortcut Quick-Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link
+            to={`/p/${code}`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              borderRadius: 8,
+              background: 'var(--surface-raised, #171A1E)',
+              border: '1px solid var(--border, #23272D)',
+              color: 'var(--text-primary, #E8E6E1)',
+              fontSize: 12,
+              fontWeight: 500,
+              textDecoration: 'none'
+            }}
+          >
+            <LayoutGrid size={14} style={{ color: 'var(--accent, #FF6B3D)' }} />
+            <span>Team Kanban</span>
+          </Link>
 
-            <div className="flex items-center gap-3">
-              <span
-                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${
-                  isConnected
-                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                }`}
-              >
-                {isConnected ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Connected
-                  </>
-                ) : (
-                  <>
-                    <Clock className="w-3.5 h-3.5" />
-                    Waiting for Link
-                  </>
-                )}
-              </span>
+          <Link
+            to={`/p/${code}/lead`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              borderRadius: 8,
+              background: 'var(--surface-raised, #171A1E)',
+              border: '1px solid var(--border, #23272D)',
+              color: 'var(--text-primary, #E8E6E1)',
+              fontSize: 12,
+              fontWeight: 500,
+              textDecoration: 'none'
+            }}
+          >
+            <Shield size={14} style={{ color: '#3B82F6' }} />
+            <span>Leader Portal</span>
+          </Link>
 
-              <button
-                onClick={handleCheckTelegram}
-                disabled={checkingTg}
-                className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-white transition-all"
-                title="Check connection"
-              >
-                <RefreshCw className={`w-4 h-4 ${checkingTg ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-          </div>
-
-          {isConnected ? (
-            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-5 text-emerald-400 flex items-start gap-4">
-              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-white text-sm">Telegram Group Linked & Active</h4>
-                <p className="text-xs text-slate-400 mt-1">
-                  Chat ID: <span className="font-mono text-emerald-300">{tgStatus?.telegram_chat_id}</span> •
-                  Ingested Messages: <span className="font-mono text-emerald-300">{tgStatus?.message_count}</span>
-                </p>
-                <p className="text-xs text-slate-400 mt-2">
-                  All updates posted to the Telegram group are now automatically analyzed by Pilot and reflected on the project board.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-[#0B0F19] border border-slate-800/80 rounded-xl p-4">
-                <div className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">
-                  Step 1
-                </div>
-                <div className="text-sm font-medium text-white mb-1">Create Telegram Group</div>
-                <p className="text-xs text-slate-400">
-                  Create a Telegram group manually with your teammates.
-                </p>
-              </div>
-
-              <div className="bg-[#0B0F19] border border-slate-800/80 rounded-xl p-4">
-                <div className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">
-                  Step 2
-                </div>
-                <div className="text-sm font-medium text-white mb-1">Add Pilot Bot</div>
-                <p className="text-xs text-slate-400">
-                  Search and add the bot to the group as an admin or member.
-                </p>
-              </div>
-
-              <div className="bg-[#0B0F19] border border-slate-800/80 rounded-xl p-4">
-                <div className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">
-                  Step 3
-                </div>
-                <div className="text-sm font-medium text-white mb-1">Send Link Command</div>
-                <div className="mt-2 flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-lg border border-slate-800">
-                  <code className="text-xs font-mono text-blue-300">/link {code}</code>
-                  <button
-                    onClick={() => copyToClipboard(`/link ${code}`, setCopiedCmd)}
-                    className="text-slate-400 hover:text-white"
-                  >
-                    {copiedCmd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <Link
+            to={`/p/${code}/guide`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 14px',
+              borderRadius: 8,
+              background: 'rgba(167, 139, 250, 0.12)',
+              border: '1px solid rgba(167, 139, 250, 0.25)',
+              color: '#A78BFA',
+              fontSize: 12,
+              fontWeight: 600,
+              textDecoration: 'none'
+            }}
+          >
+            <Bot size={14} />
+            <span>Guide / Evaluator</span>
+          </Link>
         </div>
+      </div>
 
-        {/* 2. Team Member Invites */}
-        <div className="bg-[#111622]/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-800/60">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-              <Users className="w-5 h-5" />
+      {/* 1. Telegram Group Binding Section */}
+      <div style={{
+        background: 'var(--surface, #111316)',
+        border: '1px solid var(--border, #23272D)',
+        borderRadius: 12,
+        padding: 24,
+        boxShadow: 'var(--shadow-floating, 0 4px 16px rgba(0,0,0,0.2))'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid var(--border, #23272D)', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#3B82F6'
+            }}>
+              <Send size={18} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">Invite Team Members & Evaluators</h2>
-              <p className="text-xs text-slate-400">
-                Issue invite tokens so teammates can join and connect their GitHub/Telegram profiles
+              <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--text-primary, #E8E6E1)' }}>
+                Telegram Group Coordination
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary, #8A8F98)', margin: '2px 0 0 0' }}>
+                Pilot listens to your team chat, interprets standups, blockers, and progress
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleCreateInvite} className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="email"
-              required
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="teammate@company.com"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-slate-700/60 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-indigo-500"
-            />
-            <select
-              value={inviteRole}
-              onChange={(e) => setInviteRole(e.target.value)}
-              className="px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-slate-700/60 text-white text-sm focus:outline-none focus:border-indigo-500"
-            >
-              <option value="member">Team Member</option>
-              <option value="guide">Guide / Evaluator</option>
-            </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '4px 12px',
+              borderRadius: 9999,
+              background: isConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+              border: isConnected ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(245, 158, 11, 0.25)',
+              color: isConnected ? '#10B981' : '#F59E0B'
+            }}>
+              {isConnected ? (
+                <>
+                  <CheckCircle2 size={14} />
+                  <span>Connected</span>
+                </>
+              ) : (
+                <>
+                  <Clock size={14} />
+                  <span>Waiting for Link</span>
+                </>
+              )}
+            </span>
+
             <button
-              type="submit"
-              disabled={sendingInvite}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs flex items-center justify-center gap-2 transition-all shrink-0"
+              onClick={handleCheckTelegram}
+              disabled={checkingTg}
+              title="Refresh connection status"
+              style={{
+                padding: 8,
+                borderRadius: 8,
+                background: 'var(--surface-raised, #171A1E)',
+                border: '1px solid var(--border, #23272D)',
+                color: 'var(--text-primary, #E8E6E1)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
             >
-              <UserPlus className="w-4 h-4" />
-              Generate Invite
+              <RefreshCw size={14} className={checkingTg ? 'spin' : ''} />
             </button>
-          </form>
-
-          {invites.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                Active Invitations
-              </div>
-              {invites.map((inv) => {
-                const fullUrl = `${window.location.origin}${inv.invite_url}`;
-                return (
-                  <div
-                    key={inv.id}
-                    className="flex items-center justify-between bg-[#0B0F19] border border-slate-800/80 rounded-xl px-4 py-3 text-xs"
-                  >
-                    <div>
-                      <span className="font-medium text-white">{inv.email}</span>
-                      <span className="ml-2 text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 capitalize">
-                        {inv.role}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-medium uppercase ${
-                          inv.status === 'accepted'
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        }`}
-                      >
-                        {inv.status}
-                      </span>
-                      <button
-                        onClick={() => copyToClipboard(fullUrl, setCopiedLink)}
-                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-1.5"
-                      >
-                        <Copy className="w-3 h-3" />
-                        <span>Copy Link</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          </div>
         </div>
-      </main>
+
+        {isConnected ? (
+          <div style={{
+            background: 'rgba(16, 185, 129, 0.08)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: 10,
+            padding: 18,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 14
+          }}>
+            <CheckCircle2 size={20} style={{ color: '#10B981', flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary, #E8E6E1)' }}>
+                Telegram Group Linked & Active
+              </h4>
+              <p style={{ margin: '6px 0 0 0', fontSize: 12, color: 'var(--text-secondary, #8A8F98)' }}>
+                Chat ID: <strong style={{ fontFamily: 'monospace', color: '#10B981' }}>{tgStatus?.telegram_chat_id}</strong> &bull; Ingested Messages: <strong style={{ fontFamily: 'monospace', color: '#10B981' }}>{tgStatus?.message_count}</strong>
+              </p>
+              <p style={{ margin: '8px 0 0 0', fontSize: 12, color: 'var(--text-secondary, #8A8F98)' }}>
+                All updates posted in this Telegram group are automatically parsed by Pilot AI and reflected on your project board.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
+            <div style={{ background: 'var(--bg, #0A0B0D)', border: '1px solid var(--border, #23272D)', borderRadius: 10, padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                Step 1
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #E8E6E1)', marginBottom: 4 }}>
+                Create Telegram Group
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary, #8A8F98)', margin: 0 }}>
+                Create a Telegram group manually with your team members.
+              </p>
+            </div>
+
+            <div style={{ background: 'var(--bg, #0A0B0D)', border: '1px solid var(--border, #23272D)', borderRadius: 10, padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                Step 2
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #E8E6E1)', marginBottom: 4 }}>
+                Add Pilot Bot
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary, #8A8F98)', margin: 0 }}>
+                Add the bot to the group as an admin or member.
+              </p>
+            </div>
+
+            <div style={{ background: 'var(--bg, #0A0B0D)', border: '1px solid var(--border, #23272D)', borderRadius: 10, padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                Step 3
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #E8E6E1)', marginBottom: 4 }}>
+                Send Link Command
+              </div>
+              <div style={{
+                marginTop: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 10px',
+                borderRadius: 6,
+                background: 'var(--surface-raised, #171A1E)',
+                border: '1px solid var(--border, #23272D)'
+              }}>
+                <code style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--accent, #FF6B3D)', fontWeight: 600 }}>
+                  /link {code}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(`/link ${code}`, setCopiedCmd)}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary, #8A8F98)', cursor: 'pointer', padding: 2, display: 'flex' }}
+                >
+                  {copiedCmd ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 2. Team Member Invites */}
+      <div style={{
+        background: 'var(--surface, #111316)',
+        border: '1px solid var(--border, #23272D)',
+        borderRadius: 12,
+        padding: 24,
+        boxShadow: 'var(--shadow-floating, 0 4px 16px rgba(0,0,0,0.2))'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottom: '1px solid var(--border, #23272D)', marginBottom: 20 }}>
+          <div style={{
+            width: 38,
+            height: 38,
+            borderRadius: 10,
+            background: 'rgba(99, 102, 241, 0.1)',
+            border: '1px solid rgba(99, 102, 241, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#6366F1'
+          }}>
+            <Users size={18} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--text-primary, #E8E6E1)' }}>
+              Invite Team Members & Evaluators
+            </h2>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary, #8A8F98)', margin: '2px 0 0 0' }}>
+              Issue invite tokens so teammates can join and connect their GitHub/Telegram profiles
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleCreateInvite} style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+          <input
+            type="email"
+            required
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            placeholder="teammate@company.com"
+            style={{
+              flex: '1 1 240px',
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: 'var(--bg, #0A0B0D)',
+              border: '1px solid var(--border, #23272D)',
+              color: 'var(--text-primary, #E8E6E1)',
+              fontSize: 13,
+              outline: 'none'
+            }}
+          />
+
+          <select
+            value={inviteRole}
+            onChange={(e) => setInviteRole(e.target.value)}
+            style={{
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: 'var(--bg, #0A0B0D)',
+              border: '1px solid var(--border, #23272D)',
+              color: 'var(--text-primary, #E8E6E1)',
+              fontSize: 13,
+              outline: 'none'
+            }}
+          >
+            <option value="member">Team Member</option>
+            <option value="guide">Guide / Evaluator</option>
+          </select>
+
+          <button
+            type="submit"
+            disabled={sendingInvite}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              borderRadius: 8,
+              background: '#6366F1',
+              color: '#FFFFFF',
+              border: 'none',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: sendingInvite ? 'not-allowed' : 'pointer',
+              opacity: sendingInvite ? 0.7 : 1,
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <UserPlus size={15} />
+            <span>{sendingInvite ? 'Generating...' : 'Generate Invite'}</span>
+          </button>
+        </form>
+
+        {invites.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary, #8A8F98)' }}>
+              Active Invitations
+            </div>
+            {invites.map((inv) => {
+              const fullUrl = `${window.location.origin}${inv.invite_url}`;
+              return (
+                <div
+                  key={inv.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    background: 'var(--bg, #0A0B0D)',
+                    border: '1px solid var(--border, #23272D)',
+                    fontSize: 12
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary, #E8E6E1)' }}>{inv.email}</span>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background: 'var(--surface-raised, #171A1E)',
+                      color: 'var(--text-secondary, #8A8F98)'
+                    }}>
+                      {inv.role}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      padding: '2px 8px',
+                      borderRadius: 9999,
+                      background: inv.status === 'accepted' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                      border: inv.status === 'accepted' ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(245, 158, 11, 0.25)',
+                      color: inv.status === 'accepted' ? '#10B981' : '#F59E0B'
+                    }}>
+                      {inv.status}
+                    </span>
+
+                    <button
+                      onClick={() => copyToClipboard(fullUrl, setCopiedLink)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        background: 'var(--surface-raised, #171A1E)',
+                        border: '1px solid var(--border, #23272D)',
+                        color: 'var(--text-primary, #E8E6E1)',
+                        cursor: 'pointer',
+                        fontSize: 11,
+                        fontWeight: 500
+                      }}
+                    >
+                      <Copy size={12} />
+                      <span>Copy Link</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -8,6 +8,10 @@
 @import '@fontsource/geist-mono/600.css';
 @import '@fontsource/instrument-serif/400-italic.css';
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Default Theme: Clean, High-Contrast Light Theme */
 :root,
 [data-theme="light"] {
