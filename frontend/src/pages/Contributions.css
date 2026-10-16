@@ -1,0 +1,247 @@
+/* ===== Contributions Page Styles (Jira Light) ===== */
+.contributions-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100%;
+  background: var(--bg);
+}
+
+.contributions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.contributions-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.contributions-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.metric-toggle {
+  display: flex;
+  background: #EBECF0;
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.metric-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.metric-btn:hover {
+  color: var(--text-primary);
+}
+
+.metric-btn.active {
+  background: #FFFFFF;
+  color: var(--accent-blue);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+/* Stats Grid */
+.contributions-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.contrib-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.card-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Chart */
+.chart-section {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chart-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.chart-legend-custom {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.legend-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.chart-wrapper {
+  width: 100%;
+}
+
+/* Table */
+.leaderboard-section {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.ledger-table th {
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  background: #F4F5F7;
+  white-space: nowrap;
+}
+
+.ledger-row {
+  border-bottom: 1px solid #EBECF0;
+  transition: background var(--transition-fast);
+}
+
+.ledger-row:hover {
+  background: #FAFBFC;
+}
+
+.ledger-row:last-child {
+  border-bottom: none;
+}
+
+.ledger-row td {
+  padding: 12px 14px;
+  vertical-align: middle;
+}
+
+.member-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.member-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.member-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lead-tag {
+  font-size: 10px;
+  background: var(--amber-subtle);
+  color: #8F4C00;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.role-badge {
+  text-transform: capitalize;
+  color: var(--text-secondary);
+}

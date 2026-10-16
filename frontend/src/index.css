@@ -1,0 +1,330 @@
+/* ===== Jira Professional Inspired Design System (Light Theme) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Background & Surface - Atlassian Neutral Canvas */
+  --bg: #FAFBFC;
+  --surface: #FFFFFF;
+  --surface-raised: #F4F5F7;
+  --surface-hover: #EBECF0;
+  --border: #DFE1E6;
+  --border-subtle: #EBECF0;
+
+  /* Typography Colors */
+  --text-primary: #172B4D;
+  --text-secondary: #42526E;
+  --text-muted: #6B778C;
+
+  /* Atlassian Primary Brand */
+  --accent-blue: #0052CC;
+  --accent-blue-hover: #0065FF;
+  --accent-blue-subtle: #DEEBFF;
+
+  /* Semantic State Palette */
+  --green: #00875A;
+  --green-hover: #006644;
+  --green-subtle: #E3FCEF;
+
+  --amber: #FF8B00;
+  --amber-subtle: #FFF0B3;
+
+  --red: #DE350B;
+  --red-hover: #BF2600;
+  --red-subtle: #FFEBE6;
+
+  --purple: #5243AA;
+  --purple-subtle: #EAE6FF;
+
+  /* Jira Owner Palette */
+  --owner-0: #0052CC;
+  --owner-1: #00875A;
+  --owner-2: #FF8B00;
+  --owner-3: #DE350B;
+  --owner-4: #6554C0;
+  --owner-5: #00A3BF;
+  --owner-6: #36B37E;
+  --owner-7: #FF5630;
+
+  /* Spacing & Radii */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+
+  /* Jira Elevation Shadows */
+  --shadow-sm: 0 1px 1px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.2);
+  --shadow-md: 0 3px 5px -1px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.25);
+  --shadow-lg: 0 8px 16px -4px rgba(9, 30, 66, 0.18), 0 0 1px rgba(9, 30, 66, 0.3);
+  --shadow-card: 0 1px 2px rgba(9, 30, 66, 0.08), 0 0 1px rgba(9, 30, 66, 0.16);
+  --shadow-card-hover: 0 4px 8px -2px rgba(9, 30, 66, 0.15), 0 0 1px rgba(9, 30, 66, 0.2);
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-normal: 180ms ease;
+  --transition-smooth: 240ms ease;
+}
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.45;
+  font-size: 14px;
+}
+
+a {
+  color: var(--accent-blue);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover {
+  color: var(--accent-blue-hover);
+  text-decoration: underline;
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #C1C7D0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A5ADBA;
+}
+
+/* ===== Typography ===== */
+.font-mono {
+  font-family: 'JetBrains Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.text-xs { font-size: 11px; line-height: 14px; }
+.text-sm { font-size: 12px; line-height: 16px; }
+.text-base { font-size: 14px; line-height: 20px; }
+.text-md { font-size: 15px; line-height: 22px; }
+.text-lg { font-size: 18px; line-height: 24px; }
+.text-xl { font-size: 20px; line-height: 28px; }
+.text-2xl { font-size: 24px; line-height: 32px; }
+
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-blue { color: var(--accent-blue); }
+.text-green { color: var(--green); }
+.text-amber { color: var(--amber); }
+.text-red { color: var(--red); }
+.text-purple { color: var(--purple); }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===== Jira Lozenges / Status Badges ===== */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  line-height: 14px;
+}
+
+.pill-blue {
+  background: var(--accent-blue-subtle);
+  color: var(--accent-blue);
+}
+
+.pill-green {
+  background: var(--green-subtle);
+  color: var(--green);
+}
+
+.pill-amber {
+  background: var(--amber-subtle);
+  color: #8F4C00;
+}
+
+.pill-red {
+  background: var(--red-subtle);
+  color: var(--red);
+}
+
+.pill-purple {
+  background: var(--purple-subtle);
+  color: var(--purple);
+}
+
+.pill-muted {
+  background: #EBECF0;
+  color: #42526E;
+}
+
+/* ===== Buttons (Jira Style) ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  line-height: 20px;
+  text-decoration: none !important;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.btn-primary {
+  background: var(--accent-blue);
+  color: #FFFFFF;
+  border-color: var(--accent-blue);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-blue-hover);
+  border-color: var(--accent-blue-hover);
+}
+.btn-primary:active:not(:disabled) {
+  background: #0747A6;
+}
+
+.btn-secondary {
+  background: #EBECF0;
+  color: var(--text-primary);
+  border-color: #DFE1E6;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #DFE1E6;
+  color: var(--text-primary);
+}
+.btn-secondary:active:not(:disabled) {
+  background: #C1C7D0;
+}
+
+.btn-outline-blue {
+  background: #FFFFFF;
+  color: var(--accent-blue);
+  border-color: #B3D4FF;
+}
+.btn-outline-blue:hover:not(:disabled) {
+  background: var(--accent-blue-subtle);
+  border-color: var(--accent-blue);
+}
+
+/* ===== Forms & Inputs ===== */
+.input {
+  background: #FFFFFF;
+  border: 1px solid #DFE1E6;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.2);
+}
+
+.input::placeholder {
+  color: #8993A4;
+}
+
+.input-mono {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.05em;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.flex { display: flex; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
+.gap-4 { gap: 16px; }
+
+/* ===== Animations ===== */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+/* Loading Dots */
+.loading-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.loading-dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1s infinite alternate;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }

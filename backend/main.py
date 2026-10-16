@@ -94,7 +94,20 @@ async def lifespan(app: FastAPI):
 
 # ── FastAPI app ────────────────────────────────────────────────────────────
 
+from fastapi.middleware.cors import CORSMiddleware
+from routes import router as api_router
+
 app = FastAPI(title="Pilot", version="0.1.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(api_router, prefix="/api")
 
 
 @app.get("/api/health")

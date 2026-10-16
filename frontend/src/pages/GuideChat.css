@@ -1,0 +1,355 @@
+/* ===== GuideChat Page Styles (Jira Light) ===== */
+.guide-chat-page {
+  height: 100%;
+  width: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.chat-layout {
+  display: flex;
+  height: 100%;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Main Chat Column */
+.chat-main {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.chat-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #FFFFFF;
+}
+
+.chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.guide-avatar-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--purple-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.chat-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chat-header-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--purple);
+  background: var(--purple-subtle);
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.live-pulse {
+  width: 6px;
+  height: 6px;
+  background: var(--purple);
+  border-radius: 50%;
+}
+
+/* Quick Prompts */
+.quick-prompts-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  background: #F4F5F7;
+}
+
+.quick-prompt-btn {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.quick-prompt-btn:hover {
+  background: #FFFFFF;
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Message stream */
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #FAFBFC;
+}
+
+.chat-bubble-wrap {
+  display: flex;
+  gap: 10px;
+  max-width: 80%;
+}
+
+.chat-bubble-wrap.bot-wrap {
+  align-self: flex-start;
+}
+
+.chat-bubble-wrap.user-wrap {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.sender-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sender-avatar.bot {
+  background: var(--purple-subtle);
+  color: var(--purple);
+}
+
+.sender-avatar.user {
+  background: var(--accent-blue-subtle);
+  color: var(--accent-blue);
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow-card);
+}
+
+.chat-bubble.bot {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.chat-bubble.bot.thinking {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.chat-bubble.user {
+  background: var(--accent-blue);
+  color: #FFFFFF;
+}
+
+.chat-task-chip {
+  background: var(--accent-blue-subtle);
+  color: var(--accent-blue);
+  border: 1px solid #B3D4FF;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  margin: 0 3px;
+  font-weight: 600;
+}
+
+.chat-bubble.user .chat-task-chip {
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  border-color: #FFFFFF;
+}
+
+.bubble-meta {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bubble-time {
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+/* Chat Input */
+.chat-input-container {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: #FFFFFF;
+  display: flex;
+  gap: 10px;
+}
+
+.chat-input {
+  flex: 1;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.2);
+}
+
+.chat-send-btn {
+  padding: 0 16px;
+  background: var(--accent-blue) !important;
+  border-color: var(--accent-blue) !important;
+}
+
+.chat-send-btn:hover {
+  background: var(--accent-blue-hover) !important;
+}
+
+/* Sidebar */
+.chat-insights-panel {
+  width: 320px;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-card);
+}
+
+.insights-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.insights-header h2 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.contradictions-box {
+  background: var(--red-subtle);
+  border: 1px solid rgba(222, 53, 11, 0.2);
+  border-left: 3px solid var(--red);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contradictions-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+.contradiction-item {
+  border-top: 1px solid rgba(222, 53, 11, 0.15);
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contradiction-summary {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.contradiction-status {
+  font-size: 10px;
+  color: var(--red);
+  font-weight: 600;
+}
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notes-heading {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.guide-note-card {
+  background: #F4F5F7;
+  border-left: 3px solid var(--purple);
+  padding: 10px 12px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.note-text {
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.note-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  align-self: flex-end;
+}
