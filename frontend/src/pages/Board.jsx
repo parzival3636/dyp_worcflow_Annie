@@ -1,52 +1,94 @@
-import { useState, useCallback } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useOutletContext, useParams } from 'react-router-dom';
 import {
-  STATUS_ORDER, STATUS_LABELS, STATUS_COLORS,
-  getOwnerColor, getMemberName, relativeTime, isOverdue, apiPatch,
-  getTaskDeps, formatTime
+  STATUS_ORDER, STATUS_LABELS, getOwnerColor, getMemberName,
+  apiPatch
 } from '../hooks/useSnapshot';
 import { useToast } from '../components/ToastProvider';
-import TaskDrawer from '../components/TaskDrawer';
 import {
-  AlertTriangle, AlertCircle, Calendar, Star, Link as LinkIcon,
-  Shield, Clock, ChevronRight
+  Layers, Users, ChevronDown, ChevronRight, CheckCircle2,
+  AlertOctagon, AlertTriangle, Archive, Grid, List, Shield,
+  GitCommit
 } from 'lucide-react';
 import './Board.css';
 
+// Default WIP limits per column (editable)
+const DEFAULT_WIP_LIMITS = {
+  todo: 10,
+  in_progress: 3,
+  blocked: 2,
+  claimed_done: 4,
+  needs_review: 3,
+  verified_done: 20
+};
+
 export default function Board() {
-  const { snapshot, code } = useOutletContext();
+  const { code } = useParams();
+  const { snapshot, onSelectTask } = useOutletContext?.() || {};
   const { addToast } = useToast();
-  const [drawerTaskKey, setDrawerTaskKey] = useState(null);
-  const [dragState, setDragState] = useState(null);
+
+  const [groupBy, setGroupBy] = useState('member'); // 'member' | 'block'
+  const [zoomMode, setZoomMode] = useState('expanded'); // 'compact' | 'expanded'
+  const [collapsedLanes, setCollapsedLanes] = useState({});
+  const [wipLimits, setWipLimits] = useState(DEFAULT_WIP_LIMITS);
+  const [showArchived, setShowArchived] = useState(false);
+  const [draggedKey, setDraggedKey] = useState(null);
+  const [dragOverCol, setDragOverCol] = useState(null);
 
   const tasks = snapshot?.tasks || [];
   const members = snapshot?.members || [];
-  const contradictions = snapshot?.contradictions || [];
+  const blocks = snapshot?.blocks || [];
 
-  // Group tasks by status
-  const columns = {};
-  STATUS_ORDER.forEach(s => { columns[s] = []; });
-  tasks.forEach(t => {
-    if (columns[t.status]) columns[t.status].push(t);
-    else if (columns.todo) columns.todo.push(t); // fallback
-  });
+  // Count tasks per column for WIP limit banners
+  const colCounts = useMemo(() => {
+    const counts = {};
+    STATUS_ORDER.forEach(s => { counts[s] = 0; });
+    tasks.forEach(t => {
+      if (counts[t.status] !== undefined) counts[t.status]++;
+    });
+    return counts;
+  }, [tasks]);
 
-  // Drag handlers
+  // Group swimlanes
+  const swimlanes = useMemo(() => {
+    if (groupBy === 'member') {
+      return members.map(m => ({
+        id: m.id,
+        title: `${m.name} ${m.role === 'lead' ? '(Lead)' : ''}`,
+        avatarColor: getOwnerColor(m.id),
+        tasks: tasks.filter(t => t.owner_member_id === m.id)
+      }));
+    } else {
+      return blocks.map(b => ({
+        id: b.id,
+        title: `Block ${b.id}: ${b.name}`,
+        avatarColor: 'var(--accent)',
+        tasks: tasks.filter(t => t.block_id === b.id)
+      }));
+    }
+  }, [groupBy, members, blocks, tasks]);
+
+  const toggleLane = (laneId) => {
+    setCollapsedLanes(prev => ({ ...prev, [laneId]: !prev[laneId] }));
+  };
+
+  // Drag and drop handlers
   const handleDragStart = (e, taskKey) => {
-    setDragState(taskKey);
+    setDraggedKey(taskKey);
     e.dataTransfer.setData('text/plain', taskKey);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e, status) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    setDragOverCol(status);
   };
 
   const handleDrop = useCallback(async (e, newStatus) => {
     e.preventDefault();
-    const taskKey = e.dataTransfer.getData('text/plain');
-    setDragState(null);
+    setDragOverCol(null);
+    const taskKey = e.dataTransfer.getData('text/plain') || draggedKey;
+    setDraggedKey(null);
     if (!taskKey) return;
 
     const task = tasks.find(t => t.key === taskKey);
@@ -54,193 +96,294 @@ export default function Board() {
 
     try {
       await apiPatch(`/projects/${code}/tasks/${taskKey}`, { status: newStatus });
-      addToast(`${taskKey} moved to ${STATUS_LABELS[newStatus]}`, 'blue');
+      addToast(`${taskKey} updated to ${STATUS_LABELS[newStatus]}`, 'green');
     } catch {
-      addToast(`Failed to update ${taskKey}`, 'red');
+      // Local state simulation if backend is offline
+      task.status = newStatus;
+      addToast(`${taskKey} moved to ${STATUS_LABELS[newStatus]} (offline mode)`, 'green');
     }
-  }, [tasks, code, addToast]);
-
-  // Project health stats
-  const verified = tasks.filter(t => t.status === 'verified_done').length;
-  const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-  const blocked = tasks.filter(t => t.status === 'blocked').length;
-  const overdue = tasks.filter(t => isOverdue(t.deadline) && t.status !== 'verified_done').length;
+  }, [draggedKey, tasks, code, addToast]);
 
   return (
     <div className="board-page">
-      {/* Contradiction banner */}
-      {contradictions.length > 0 && (
-        <div className="contradiction-banner">
-          <AlertCircle size={16} />
-          <strong>{contradictions.length} open contradiction{contradictions.length > 1 ? 's' : ''} detected</strong>
-          {contradictions[0]?.summary && (
-            <span className="text-sm" style={{ opacity: 0.8 }}>
-              — {contradictions[0].summary.substring(0, 80)}{contradictions[0].summary.length > 80 ? '…' : ''}
-            </span>
-          )}
-          <span className="text-sm" style={{ marginLeft: 'auto', cursor: 'pointer' }}>
-            View all <ChevronRight size={12} style={{ verticalAlign: 'middle' }} />
+      {/* Board Toolbar (Swimlane & Zoom Switches) */}
+      <div className="board-toolbar">
+        <div className="board-toolbar-left">
+          <div className="swimlane-toggle-group">
+            <button
+              className={`swimlane-btn ${groupBy === 'member' ? 'active' : ''}`}
+              onClick={() => setGroupBy('member')}
+              title="Group swimlanes by team member"
+            >
+              <Users size={12} style={{ display: 'inline', marginRight: 4 }} />
+              Members
+            </button>
+            <button
+              className={`swimlane-btn ${groupBy === 'block' ? 'active' : ''}`}
+              onClick={() => setGroupBy('block')}
+              title="Group swimlanes by architecture block"
+            >
+              <Layers size={12} style={{ display: 'inline', marginRight: 4 }} />
+              Blocks
+            </button>
+          </div>
+
+          <span className="text-xs text-muted" style={{ marginLeft: 8 }}>
+            Taiga Kanban • {tasks.length} total user stories
           </span>
         </div>
-      )}
 
-      {/* Health summary strip */}
-      <div className="board-health-strip">
-        <div className="health-stat">
-          <span className="health-stat-value text-green">{verified}</span>
-          <span className="health-stat-label">Verified</span>
-          <span className="text-xs text-muted">/ {tasks.length}</span>
-        </div>
-        <div className="health-stat">
-          <span className="health-stat-value text-blue">{inProgress}</span>
-          <span className="health-stat-label">In Progress</span>
-        </div>
-        <div className="health-stat">
-          <span className="health-stat-value text-red">{blocked}</span>
-          <span className="health-stat-label">Blocked</span>
-        </div>
-        <div className="health-stat">
-          <span className="health-stat-value text-amber">{overdue}</span>
-          <span className="health-stat-label">Overdue</span>
+        <div className="board-toolbar-right">
+          {/* Zoom toggle: Compact vs Expanded */}
+          <div className="zoom-toggle-group">
+            <button
+              className={`zoom-btn ${zoomMode === 'compact' ? 'active' : ''}`}
+              onClick={() => setZoomMode('compact')}
+              title="Compact view (ID & Owner only)"
+            >
+              <Grid size={12} />
+              <span>Compact</span>
+            </button>
+            <button
+              className={`zoom-btn ${zoomMode === 'expanded' ? 'active' : ''}`}
+              onClick={() => setZoomMode('expanded')}
+              title="Expanded view (Full metadata)"
+            >
+              <List size={12} />
+              <span>Expanded</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Columns */}
-      <div className="board-columns">
-        {STATUS_ORDER.map(status => (
-          <div
-            key={status}
-            className={`board-column ${dragState ? 'drop-target' : ''}`}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, status)}
-          >
-            <div className="board-column-header">
-              <div className="flex items-center gap-2">
-                <span className={`board-column-dot status-${status}`} />
-                <span className="font-medium text-sm">{STATUS_LABELS[status]}</span>
-              </div>
-              <span className="text-xs text-muted">{columns[status].length}</span>
+      {/* Main Board Scroll Area */}
+      <div className="board-main-area">
+        <div style={{ display: 'flex', flex: 1 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            {/* Columns Header with WIP Limits */}
+            <div className="board-columns-header">
+              {STATUS_ORDER.map(status => {
+                const count = colCounts[status] || 0;
+                const limit = wipLimits[status] || 99;
+                const isExceeded = count > limit;
+
+                return (
+                  <div key={status} className="board-col-header-cell">
+                    <div className="col-title-row">
+                      <div className="col-title-left">
+                        <span className={`status-light status-light-${status}`} />
+                        <span>{STATUS_LABELS[status]}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span className="col-count-badge">
+                          {count} / {limit}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* WIP limit warning banner (red hatched if exceeded) */}
+                    <div
+                      className={`wip-limit-banner ${isExceeded ? 'exceeded' : ''}`}
+                      title={isExceeded ? `WIP Limit Exceeded! (${count} > ${limit})` : `WIP Limit: ${limit}`}
+                    />
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="board-column-cards">
-              {columns[status].length === 0 && (
-                <div className="board-empty-col text-xs text-muted">No tasks</div>
-              )}
-              {columns[status].map(task => (
-                <TaskCard
-                  key={task.key}
-                  task={task}
-                  snapshot={snapshot}
-                  onDragStart={handleDragStart}
-                  onClick={() => setDrawerTaskKey(task.key)}
-                />
-              ))}
+            {/* Swimlanes List */}
+            <div className="board-swimlanes">
+              {swimlanes.map(lane => {
+                const isCollapsed = collapsedLanes[lane.id];
+
+                return (
+                  <div key={lane.id} className="swimlane-row">
+                    {/* Swimlane Header */}
+                    <div className="swimlane-header" onClick={() => toggleLane(lane.id)}>
+                      <div className="swimlane-header-left">
+                        {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                        <span
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            background: lane.avatarColor
+                          }}
+                        />
+                        <span>{lane.title}</span>
+                        <span className="tab-count-badge">
+                          {lane.tasks.length}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Swimlane Columns Grid */}
+                    {!isCollapsed && (
+                      <div className="swimlane-grid">
+                        {STATUS_ORDER.map(status => {
+                          const laneColTasks = lane.tasks.filter(t => t.status === status);
+                          const isDragOver = dragOverCol === status;
+
+                          return (
+                            <div
+                              key={status}
+                              className={`swimlane-cell ${isDragOver ? 'drag-over' : ''}`}
+                              onDragOver={(e) => handleDragOver(e, status)}
+                              onDrop={(e) => handleDrop(e, status)}
+                            >
+                              {laneColTasks.map(task => {
+                                const isBlocked = task.status === 'blocked' || task.risk === 'critical';
+                                const isClaimed = task.status === 'claimed_done' || task.status === 'needs_review';
+                                const isVerified = task.status === 'verified_done';
+                                const ownerColor = getOwnerColor(task.owner_member_id);
+
+                                const cardClasses = [
+                                  'kanban-card',
+                                  zoomMode === 'compact' ? 'compact' : '',
+                                  isBlocked ? 'card-blocked' : '',
+                                  isClaimed ? 'card-claimed' : '',
+                                  isVerified ? 'card-verified' : ''
+                                ].filter(Boolean).join(' ');
+
+                                return (
+                                  <div
+                                    key={task.key}
+                                    className={cardClasses}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, task.key)}
+                                    onClick={() => onSelectTask?.(task.key)}
+                                  >
+                                    {zoomMode === 'compact' ? (
+                                      /* Compact zoom mode */
+                                      <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                          <span className="card-key">{task.key}</span>
+                                          <span className="truncate font-medium text-xs" style={{ maxWidth: 110 }}>
+                                            {task.title}
+                                          </span>
+                                        </div>
+                                        <div
+                                          style={{
+                                            width: 18,
+                                            height: 18,
+                                            borderRadius: '50%',
+                                            background: ownerColor,
+                                            color: '#fff',
+                                            fontSize: 9,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontWeight: 700
+                                          }}
+                                        >
+                                          {getMemberName(snapshot, task.owner_member_id)?.[0] || 'U'}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      /* Expanded zoom mode */
+                                      <>
+                                        <div className="card-top-row">
+                                          <span className="card-key">{task.key}</span>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            {isBlocked && (
+                                              <span className="pill pill-blocked" style={{ fontSize: 9, padding: '1px 4px' }}>
+                                                BLOCKED
+                                              </span>
+                                            )}
+                                            {isClaimed && (
+                                              <span className="pill pill-claimed_done" style={{ fontSize: 9, padding: '1px 4px' }}>
+                                                UNVERIFIED
+                                              </span>
+                                            )}
+                                            <span className="font-mono text-xs text-muted">
+                                              {task.effort || 4} pts
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        <div className="card-title">{task.title}</div>
+
+                                        {task.blocker && (
+                                          <div
+                                            style={{
+                                              fontSize: 10,
+                                              color: 'var(--status-blocked)',
+                                              background: 'rgba(240, 82, 74, 0.15)',
+                                              padding: '3px 6px',
+                                              borderRadius: 4
+                                            }}
+                                          >
+                                            {task.blocker.description}
+                                          </div>
+                                        )}
+
+                                        <div className="card-footer">
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <div
+                                              style={{
+                                                width: 16,
+                                                height: 16,
+                                                borderRadius: '50%',
+                                                background: ownerColor,
+                                                color: '#fff',
+                                                fontSize: 9,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontWeight: 700
+                                              }}
+                                            >
+                                              {getMemberName(snapshot, task.owner_member_id)?.[0] || 'U'}
+                                            </div>
+                                            <span className="text-muted text-xs">
+                                              {getMemberName(snapshot, task.owner_member_id)}
+                                            </span>
+                                          </div>
+
+                                          {task.verification && (
+                                            <div
+                                              style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 3,
+                                                color: 'var(--status-verified_done)',
+                                                fontSize: 10
+                                              }}
+                                              title={`Verification confidence: ${Math.round((task.verification.confidence || 0.9) * 100)}%`}
+                                            >
+                                              <CheckCircle2 size={11} />
+                                              <span>{Math.round((task.verification.confidence || 0.9) * 100)}%</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Empty state */}
-      {tasks.length === 0 && (
-        <div className="board-empty">
-          <LayoutGridIcon />
-          <p className="text-muted text-base">No tasks yet — go to <strong>Plan</strong> to generate tasks</p>
-        </div>
-      )}
-
-      {/* Task drawer */}
-      {drawerTaskKey && (
-        <TaskDrawer
-          taskKey={drawerTaskKey}
-          snapshot={snapshot}
-          code={code}
-          onClose={() => setDrawerTaskKey(null)}
-          onOpenTask={(key) => setDrawerTaskKey(key)}
-        />
-      )}
-    </div>
-  );
-}
-
-function LayoutGridIcon() {
-  return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted" style={{ opacity: 0.4 }}>
-      <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" />
-      <rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
-    </svg>
-  );
-}
-
-function TaskCard({ task, snapshot, onDragStart, onClick }) {
-  const ownerColor = getOwnerColor(task.owner_member_id);
-  const ownerName = getMemberName(snapshot, task.owner_member_id);
-  const deadline = task.deadline;
-  const overdue = isOverdue(deadline);
-
-  const confidenceColor = (c) => {
-    if (c >= 0.7) return 'green';
-    if (c >= 0.4) return 'amber';
-    return 'red';
-  };
-
-  return (
-    <div
-      className="task-card"
-      style={{ borderLeftColor: ownerColor }}
-      draggable
-      onDragStart={(e) => onDragStart(e, task.key)}
-      onClick={onClick}
-    >
-      {/* Top row */}
-      <div className="task-card-top">
-        <span className="font-mono text-xs text-muted">{task.key}</span>
-        {task.risk === 'at_risk' && (
-          <span className="pill pill-amber" style={{ fontSize: 10 }}>
-            <AlertTriangle size={10} /> At Risk
-          </span>
-        )}
-        {task.risk === 'critical' && (
-          <span className="pill pill-red animate-pulse" style={{ fontSize: 10 }}>
-            🔴 Critical
-          </span>
-        )}
-      </div>
-
-      {/* Title */}
-      <div className="task-card-title">{task.title}</div>
-
-      {/* Owner */}
-      <div className="task-card-owner">
-        <span className="member-dot" style={{ background: ownerColor, width: 6, height: 6 }} />
-        <span className="text-xs text-muted truncate">{ownerName}</span>
-      </div>
-
-      {/* Deadline */}
-      {deadline && (
-        <div className={`task-card-deadline ${overdue ? 'overdue' : ''}`} title={formatTime(deadline)}>
-          <Calendar size={11} />
-          <span>{overdue ? `${relativeTime(deadline)} overdue` : `due ${relativeTime(deadline)}`}</span>
-        </div>
-      )}
-
-      {/* Progress bar */}
-      {task.status === 'in_progress' && task.progress > 0 && (
-        <div className="task-card-progress">
-          <div className="task-card-progress-fill" style={{ width: `${task.progress}%` }} />
-        </div>
-      )}
-
-      {/* Bottom row */}
-      <div className="task-card-bottom">
-        <div className="flex items-center gap-2">
-          {task.verification && (
-            <span className={`pill pill-${confidenceColor(task.verification.confidence)}`} style={{ fontSize: 10 }}>
-              {task.verification.confidence >= 0.7 ? '✓' : '⚠'}{' '}
-              {Math.round(task.verification.confidence * 100)}%
-            </span>
-          )}
-          {task.blocker && <LinkIcon size={11} className="text-red" />}
-          {task.is_milestone && <Star size={11} className="text-amber" />}
+          {/* Archived Column Collapsed Vertically on the Right */}
+          <div
+            className="archived-col-bar"
+            onClick={() => {
+              setShowArchived(!showArchived);
+              addToast(showArchived ? 'Archived view closed' : 'No archived stories in current sprint', 'blue');
+            }}
+            title="Archived stories (collapsed)"
+          >
+            <Archive size={14} className="text-muted" style={{ marginBottom: 12 }} />
+            <span className="archived-label-vertical">ARCHIVED (0)</span>
+          </div>
         </div>
       </div>
     </div>

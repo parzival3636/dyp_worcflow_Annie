@@ -1,0 +1,330 @@
+/* Overview Page: Taiga Scrum Burndown + Planti Soft Dashboard */
+.overview-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  background: var(--bg);
+  padding: 16px 24px 48px;
+  gap: 20px;
+}
+
+/* 1. Taiga Scrum Header Strip */
+.taiga-strip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.taiga-strip-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.taiga-strip-bar-wrap {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.taiga-progress-bar {
+  flex: 1;
+  height: 14px;
+  background: var(--surface-raised);
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  display: flex;
+}
+
+.taiga-bar-fill {
+  height: 100%;
+  transition: width 240ms ease;
+}
+.taiga-bar-verified { background: var(--status-verified_done); }
+.taiga-bar-claimed { background: var(--status-claimed_done); }
+.taiga-bar-progress { background: var(--status-in_progress); }
+.taiga-bar-blocked { background: var(--status-blocked); }
+
+.taiga-readouts {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.taiga-readout-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+}
+.taiga-readout-val {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Geist Mono', monospace;
+  color: var(--text-primary);
+}
+.taiga-readout-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Taiga Burndown Chart */
+.taiga-burndown-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.burndown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.burndown-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 11px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-line-ideal {
+  width: 16px;
+  height: 2px;
+  border-top: 2px dashed var(--text-muted);
+}
+.legend-line-actual {
+  width: 16px;
+  height: 3px;
+  background: var(--status-verified_done);
+}
+
+/* 2. Planti Dashboard Layout Grid */
+.planti-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .planti-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.planti-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.planti-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Planti KPI Tiles (Soft pastel-tinted in light, muted tinted in dark) */
+.planti-tiles-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.planti-tile {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: transform 120ms ease;
+}
+.planti-tile:hover {
+  transform: translateY(-1px);
+}
+
+.planti-tile-num {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: 'Geist Mono', monospace;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.planti-tile-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Planti Donut & Hero Gradient Card */
+.planti-hero-card {
+  background: linear-gradient(135deg, rgba(255, 107, 61, 0.15), rgba(76, 141, 255, 0.1));
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-panel);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.planti-hero-text h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+.planti-hero-text p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+/* Today / Tomorrow Horizon */
+.planti-horizon-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.horizon-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.horizon-task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-ctrl);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  gap: 12px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+.horizon-task-row:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+}
+
+.horizon-meta-line {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Calendar Card & Countdown */
+.planti-calendar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+  font-size: 11px;
+}
+.cal-day-header {
+  font-weight: 600;
+  color: var(--text-muted);
+  padding-bottom: 4px;
+}
+.cal-day-num {
+  padding: 6px 2px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-family: 'Geist Mono', monospace;
+}
+.cal-day-num.has-deadline {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  font-weight: 600;
+  border: 1px solid var(--accent-border);
+}
+.cal-day-num.today {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Live Countdown Card */
+.countdown-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+}
+.countdown-timer {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: 'Geist Mono', monospace;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+
+/* Contradictions Alert Banner */
+.contradiction-banner {
+  background: rgba(240, 82, 74, 0.1);
+  border: 1px solid var(--status-blocked);
+  border-radius: var(--radius-panel);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}

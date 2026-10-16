@@ -1,12 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { SEEDED_SNAPSHOT } from '../mock/snapshot';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const POLL_INTERVAL = 2000;
 
 /* ===== Owner color from palette (Jira Accessible) ===== */
-const OWNER_COLORS = [
-  '#0052CC', '#00875A', '#FF8B00', '#DE350B',
-  '#6554C0', '#00A3BF', '#36B37E', '#FF5630',
+export const OWNER_COLORS = [
+  '#4C8DFF', // Member 1 (Kabir - Lead)
+  '#3DD68C', // Member 2 (Aarav)
+  '#F2B33D', // Member 3 (Priya)
+  '#A78BFA', // Member 4 (Rohan)
+  '#00D2D3', // Member 5
+  '#FF6B8B', // Member 6
 ];
 
 export function getOwnerColor(memberId) {
@@ -105,187 +110,14 @@ export function useSnapshot(code) {
   return { snapshot, loading, error, diff, refetch: fetchSnapshot };
 }
 
-/* ===== Demo Snapshot Generator ===== */
 export function getDemoSnapshot(code = 'demo01') {
-  return {
-    project: {
-      code,
-      name: "PayFlow",
-      idea: "A high-concurrency payment processing app for campus events",
-      repo_full_name: "pilot-team/payflow",
-      repo_url: "https://github.com/pilot-team/payflow",
-      status: "running",
-      starts_at: "2026-10-16T09:00:00Z",
-      ends_at: "2026-10-18T09:00:00Z"
-    },
-    members: [
-      { id: 1, name: "Kabir", role: "lead", github_login: "kabir-dev", invite_status: "accepted", color: "#58A6FF" },
-      { id: 2, name: "Aarav", role: "member", github_login: "aarav-code", invite_status: "accepted", color: "#3FB950" },
-      { id: 3, name: "Priya", role: "member", github_login: "priya-tech", invite_status: "accepted", color: "#D29922" },
-      { id: 4, name: "Rohan", role: "member", github_login: "rohan-eng", invite_status: "accepted", color: "#BC8CFF" }
-    ],
-    blocks: [
-      { id: 1, name: "Payment Gateway API", owner_member_id: 1, total_effort: 14, oversize_flag: 0 },
-      { id: 2, name: "Database & Schemas", owner_member_id: 2, total_effort: 10, oversize_flag: 0 },
-      { id: 3, name: "Checkout UI & State", owner_member_id: 3, total_effort: 12, oversize_flag: 0 },
-      { id: 4, name: "Webhook Integration", owner_member_id: 4, total_effort: 11, oversize_flag: 0 }
-    ],
-    tasks: [
-      {
-        key: "T-1",
-        title: "Set up PostgreSQL schemas and migrations",
-        status: "verified_done",
-        owner_member_id: 2,
-        block_id: 2,
-        effort: 4,
-        deadline: "2026-10-16T14:00:00Z",
-        progress: 100,
-        risk: "ok",
-        is_milestone: false,
-        acceptance_criteria: ["Initial schema migration applied", "Foreign keys and indices on transactions"],
-        description: "Establish tables for accounts, event tickets, and payment ledgers.",
-        verification: { verdict: "verified", confidence: 0.94, reason: "All schema migration scripts present and test suite passes." },
-        blocker: null
-      },
-      {
-        key: "T-2",
-        title: "Stripe & Razorpay payment API integration",
-        status: "blocked",
-        owner_member_id: 1,
-        block_id: 1,
-        effort: 8,
-        deadline: "2026-10-16T18:00:00Z",
-        progress: 45,
-        risk: "critical",
-        is_milestone: false,
-        acceptance_criteria: ["Process test charge via Stripe SDK", "Handle idempotency keys", "Validate signature on webhook callbacks"],
-        description: "Core checkout integration. Waiting on webhook endpoint URL and environment credentials.",
-        verification: null,
-        blocker: {
-          id: 1,
-          description: "Needs public webhook HTTPS endpoint URL from Aarav to complete signature test",
-          status: "routed",
-          routed_to: 2
-        }
-      },
-      {
-        key: "T-3",
-        title: "Interactive Ticket Checkout Flow",
-        status: "in_progress",
-        owner_member_id: 3,
-        block_id: 3,
-        effort: 6,
-        deadline: "2026-10-17T02:00:00Z",
-        progress: 60,
-        risk: "at_risk",
-        is_milestone: false,
-        acceptance_criteria: ["Ticket selection slider", "Payment modal triggers callback", "Receipt screen displays QR code"],
-        description: "Mobile-responsive checkout modal embedded into campus event landing page.",
-        verification: null,
-        blocker: null
-      },
-      {
-        key: "T-4",
-        title: "Webhook listener & Transaction Ledger",
-        status: "needs_review",
-        owner_member_id: 4,
-        block_id: 4,
-        effort: 5,
-        deadline: "2026-10-17T06:00:00Z",
-        progress: 90,
-        risk: "ok",
-        is_milestone: false,
-        acceptance_criteria: ["Listen for payment_intent.succeeded", "Update ticket status in DB", "Send Telegram confirmation receipt"],
-        description: "Asynchronous event listener for payment success.",
-        verification: { verdict: "partial", confidence: 0.65, reason: "Telegram confirmation handler test coverage missing." },
-        blocker: null
-      },
-      {
-        key: "T-5",
-        title: "Integration Testing & Live Demo Milestone",
-        status: "todo",
-        owner_member_id: 1,
-        block_id: 1,
-        effort: 6,
-        deadline: "2026-10-17T16:00:00Z",
-        progress: 0,
-        risk: "at_risk",
-        is_milestone: true,
-        acceptance_criteria: ["End-to-end checkout demo on staging", "Real-time ledger updates on dashboard", "All 4 builders verified"],
-        description: "Final team milestone for Kurukshetra Hackathon demo presentation.",
-        verification: null,
-        blocker: null
-      }
-    ],
-    deps: [
-      { from: "T-1", to: "T-2", kind: "hard" },
-      { from: "T-2", to: "T-3", kind: "hard" },
-      { from: "T-3", to: "T-5", kind: "hard" },
-      { from: "T-4", to: "T-5", kind: "handoff" }
-    ],
-    contradictions: [
-      {
-        id: 1,
-        task_ids: ["T-2", "T-4"],
-        member_ids: [1, 4],
-        summary: "Kabir reported waiting on webhook credentials, but Rohan noted credentials were committed 30m ago.",
-        status: "open"
-      }
-    ],
-    events: [
-      {
-        id: 101,
-        ts: "2026-10-16T13:40:00Z",
-        actor_member_id: 1,
-        type: "blocker_opened",
-        task_id: "T-2",
-        payload: { description: "Waiting on public HTTPS webhook endpoint from Aarav", routed_to: 2 }
-      },
-      {
-        id: 102,
-        ts: "2026-10-16T13:30:00Z",
-        actor_member_id: 2,
-        type: "commit_seen",
-        task_id: "T-1",
-        payload: { sha: "4a9f2bc", message: "[T-1] Add db migration for payment ledger", additions: 142, deletions: 12, files: ["db/migration_01.sql"] }
-      },
-      {
-        id: 103,
-        ts: "2026-10-16T13:31:00Z",
-        actor_member_id: null,
-        type: "verification_done",
-        task_id: "T-1",
-        payload: { verdict: "verified", confidence: 0.94, reason: "All acceptance criteria verified against commit 4a9f2bc" }
-      },
-      {
-        id: 104,
-        ts: "2026-10-16T13:35:00Z",
-        actor_member_id: null,
-        type: "guide_note",
-        task_id: "T-2",
-        payload: { text: "Kabir is blocked on T-2. Downstream slip calculated: 3.5 hrs. Demo milestone T-5 is now at risk." }
-      }
-    ],
-    contributions: {
-      series: {
-        "1": [{ ts: "10:00", commits: 1, lines: 120 }, { ts: "12:00", commits: 3, lines: 410 }, { ts: "14:00", commits: 5, lines: 780 }],
-        "2": [{ ts: "10:00", commits: 2, lines: 250 }, { ts: "12:00", commits: 4, lines: 620 }, { ts: "14:00", commits: 6, lines: 980 }],
-        "3": [{ ts: "10:00", commits: 0, lines: 0 }, { ts: "12:00", commits: 2, lines: 340 }, { ts: "14:00", commits: 3, lines: 520 }],
-        "4": [{ ts: "10:00", commits: 1, lines: 90 }, { ts: "12:00", commits: 2, lines: 280 }, { ts: "14:00", commits: 4, lines: 640 }]
-      },
-      totals: [
-        { member_id: 1, commits: 5, lines: 780, tasks_verified: 1, last_active: "2026-10-16T13:40:00Z" },
-        { member_id: 2, commits: 6, lines: 980, tasks_verified: 2, last_active: "2026-10-16T13:30:00Z" },
-        { member_id: 3, commits: 3, lines: 520, tasks_verified: 1, last_active: "2026-10-16T13:20:00Z" },
-        { member_id: 4, commits: 4, lines: 640, tasks_verified: 1, last_active: "2026-10-16T13:10:00Z" }
-      ]
-    },
-    guide_notes: [
-      { text: "Kabir is blocked on T-2 -> Demo milestone is at risk.", created_at: "2026-10-16T13:35:00Z" },
-      { text: "Aarav verified task T-1 (PostgreSQL schema) with 94% confidence.", created_at: "2026-10-16T13:31:00Z" }
-    ]
-  };
+  const clone = JSON.parse(JSON.stringify(SEEDED_SNAPSHOT));
+  if (clone.project) {
+    clone.project.code = code;
+  }
+  return clone;
 }
+
 
 /* ===== useHealth hook ===== */
 export function useHealth() {
