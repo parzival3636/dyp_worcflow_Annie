@@ -31,6 +31,7 @@ export default function ProjectSetupPage() {
   const [copiedCmd, setCopiedCmd] = useState(false);
 
   // Invite input
+  const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
   const [sendingInvite, setSendingInvite] = useState(false);
@@ -84,10 +85,13 @@ export default function ProjectSetupPage() {
     setSendingInvite(true);
     try {
       const res = await apiPost(`/projects/${code}/invites`, {
+        name: inviteName.trim() || undefined,
         email: inviteEmail.trim(),
         role: inviteRole,
       });
-      toast.success(`Invite created for ${res.email}`);
+      const label = res.email_sent ? 'Invite email sent!' : `Invite created for ${res.email} (copy link below)`;
+      toast.success(label);
+      setInviteName('');
       setInviteEmail('');
       const invs = await apiGet(`/projects/${code}/invites`);
       setInvites(invs);
@@ -379,6 +383,22 @@ export default function ProjectSetupPage() {
         </div>
 
         <form onSubmit={handleCreateInvite} style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+          <input
+            type="text"
+            value={inviteName}
+            onChange={(e) => setInviteName(e.target.value)}
+            placeholder="Full name (e.g. Arjun)"
+            style={{
+              flex: '1 1 160px',
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: 'var(--bg, #0A0B0D)',
+              border: '1px solid var(--border, #23272D)',
+              color: 'var(--text-primary, #E8E6E1)',
+              fontSize: 13,
+              outline: 'none'
+            }}
+          />
           <input
             type="email"
             required

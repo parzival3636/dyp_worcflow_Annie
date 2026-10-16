@@ -52,19 +52,44 @@ export default function Board() {
   // Group swimlanes
   const swimlanes = useMemo(() => {
     if (groupBy === 'member') {
-      return members.map(m => ({
+      const lanes = members.map(m => ({
         id: m.id,
         title: `${m.name} ${m.role === 'lead' ? '(Lead)' : ''}`,
         avatarColor: getOwnerColor(m.id),
         tasks: tasks.filter(t => t.owner_member_id === m.id)
       }));
+
+      // Collect unassigned tasks (no owner or owner not in members list)
+      const memberIds = new Set(members.map(m => m.id));
+      const unassignedTasks = tasks.filter(t => !t.owner_member_id || !memberIds.has(t.owner_member_id));
+      if (unassignedTasks.length > 0) {
+        lanes.unshift({
+          id: 'unassigned',
+          title: 'Unassigned Tasks',
+          avatarColor: '#f59e0b',
+          tasks: unassignedTasks
+        });
+      }
+      return lanes;
     } else {
-      return blocks.map(b => ({
+      const lanes = blocks.map(b => ({
         id: b.id,
         title: `Block ${b.id}: ${b.name}`,
         avatarColor: 'var(--accent)',
         tasks: tasks.filter(t => t.block_id === b.id)
       }));
+
+      const blockIds = new Set(blocks.map(b => b.id));
+      const unassignedBlockTasks = tasks.filter(t => !t.block_id || !blockIds.has(t.block_id));
+      if (unassignedBlockTasks.length > 0) {
+        lanes.unshift({
+          id: 'unassigned_blocks',
+          title: 'General / No Architecture Block',
+          avatarColor: 'var(--text-muted, #888)',
+          tasks: unassignedBlockTasks
+        });
+      }
+      return lanes;
     }
   }, [groupBy, members, blocks, tasks]);
 
@@ -276,7 +301,7 @@ export default function Board() {
                                             fontWeight: 700
                                           }}
                                         >
-                                          {getMemberName(snapshot, task.owner_member_id)?.[0] || 'U'}
+                                          {task.owner_member_id ? (getMemberName(snapshot, task.owner_member_id)?.[0] || 'U') : '?'}
                                         </div>
                                       </>
                                     ) : (
@@ -333,10 +358,10 @@ export default function Board() {
                                                 fontWeight: 700
                                               }}
                                             >
-                                              {getMemberName(snapshot, task.owner_member_id)?.[0] || 'U'}
+                                              {task.owner_member_id ? (getMemberName(snapshot, task.owner_member_id)?.[0] || 'U') : '?'}
                                             </div>
                                             <span className="text-muted text-xs">
-                                              {getMemberName(snapshot, task.owner_member_id)}
+                                              {task.owner_member_id ? getMemberName(snapshot, task.owner_member_id) : 'Unassigned'}
                                             </span>
                                           </div>
 

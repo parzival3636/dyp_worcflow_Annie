@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     quiet_hours_end: int = 8
     group_debounce_seconds: int = 12
     group_max_buffer: int = 6
+    llm_log_path: str = "docs/demo-evidence/llm.log"
 
     # Annie legacy compatibility (kept to avoid import errors from existing modules)
     supabase_url: str = ""
