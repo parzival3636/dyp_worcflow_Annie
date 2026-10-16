@@ -39,13 +39,78 @@ def invite_collaborator(repo: str, login: str) -> None:
 
 
 def generate_tasks(project_id: int) -> list[int]:
-    logger.info("[stub] generate_tasks for project %d", project_id)
-    return []
+    """Generate initial task breakdown for project."""
+    logger.info("generate_tasks for project %d", project_id)
+    from datetime import datetime, timezone, timedelta
+    from sqlmodel import select
+    from db import get_session
+    from models import Project, Task
+
+    with get_session() as session:
+        project = session.get(Project, project_id)
+        if not project:
+            return []
+
+        # Check if tasks already exist
+        existing = session.exec(select(Task).where(Task.project_id == project_id)).all()
+        if existing:
+            return [t.id for t in existing if t.id is not None]
+
+        idea_lower = (project.idea or project.name or "").lower()
+        now = datetime.now(timezone.utc)
+
+        task_defs = [
+            ("T-1", "Setup database schema and models", "Design and apply tables, migrations, and database connection pool.", ["PostgreSQL tables created", "ORM models working"], 2, 12),
+            ("T-2", "User authentication & JWT API", "Implement signup, login, password hashing and JWT token auth.", ["Register endpoint working", "JWT validated in middleware"], 3, 24),
+            ("T-3", "Core CRUD API & business logic", "Implement core endpoints, validation, and database queries.", ["CRUD endpoints working", "Request validation in place"], 4, 36),
+            ("T-4", "Frontend UI and component layout", "Build responsive modern pages and connect to backend APIs.", ["Responsive design", "API integration complete"], 4, 40),
+            ("T-5", "Testing, bugfixes & deployment", "Run end-to-end testing, resolve blockers, and deploy service.", ["All tests passing", "Service accessible online"], 2, 48),
+        ]
+
+        created_ids = []
+        for key, title, desc, crit, eff, hours in task_defs:
+            task = Task(
+                project_id=project_id,
+                key=key,
+                title=title,
+                description=desc,
+                acceptance_criteria=crit,
+                effort=eff,
+                status="todo",
+                progress=0,
+                deadline=now + timedelta(hours=hours),
+            )
+            session.add(task)
+            session.flush()
+            if task.id is not None:
+                created_ids.append(task.id)
+
+        session.commit()
+        return created_ids
 
 
 def bundle_and_assign(project_id: int) -> dict:
-    logger.info("[stub] bundle_and_assign for project %d", project_id)
-    return {"blocks": []}
+    """Distribute and assign tasks across project members."""
+    logger.info("bundle_and_assign for project %d", project_id)
+    from sqlmodel import select
+    from db import get_session
+    from models import Member, Task
+
+    with get_session() as session:
+        members = session.exec(select(Member).where(Member.project_id == project_id)).all()
+        tasks = session.exec(select(Task).where(Task.project_id == project_id)).all()
+
+        if not members or not tasks:
+            return {"assigned": 0}
+
+        # Round-robin assign tasks to members
+        for i, task in enumerate(tasks):
+            assigned_member = members[i % len(members)]
+            task.owner_member_id = assigned_member.id
+            session.add(task)
+
+        session.commit()
+        return {"assigned": len(tasks)}
 
 
 def kickoff(project_id: int) -> None:

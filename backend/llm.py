@@ -154,10 +154,15 @@ def _safe_default(model_cls: Type[T]) -> T:
     Build a 'safe' instance of model_cls that does nothing harmful.
     Uses model_construct() with sensible zero-values.
     """
+    from pydantic_core import PydanticUndefined
+
     # Build kwargs from field defaults and annotations
     defaults: dict = {}
     for name, field_info in model_cls.model_fields.items():
-        if field_info.default is not None:
+        # Check default_factory first (e.g. Field(default_factory=list))
+        if field_info.default_factory is not None:
+            defaults[name] = field_info.default_factory()
+        elif field_info.default is not None and field_info.default is not PydanticUndefined:
             defaults[name] = field_info.default
         else:
             anno = field_info.annotation
@@ -185,5 +190,8 @@ def _safe_default(model_cls: Type[T]) -> T:
         defaults["kind"] = "none"
     if "observations" in defaults:
         defaults["observations"] = []
+    if "results" in defaults:
+        defaults["results"] = []
 
     return model_cls.model_construct(**defaults)
+
