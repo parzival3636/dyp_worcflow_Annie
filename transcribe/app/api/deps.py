@@ -54,4 +54,10 @@ def get_notifier() -> Notifier:
 
 
 def get_member_repo() -> MemberRepository:
-    return InMemoryMemberRepository()
+    from app.integrations.members import PilotDbMemberRepository
+    return PilotDbMemberRepository()
+
+
+def get_task_sink() -> TaskSink:
+    from app.integrations.tasks import PilotDbTaskSink
+    return PilotDbTaskSink()

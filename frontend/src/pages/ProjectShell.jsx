@@ -243,6 +243,37 @@ export default function ProjectShell() {
             </NavLink>
           </div>
 
+          {/* AI Task Verification & CI Telemetry */}
+          <div className="sidebar-group">
+            {sidebarExpanded && <div className="sidebar-group-title">AI Verification &amp; CI</div>}
+            <NavLink
+              to={`/p/${code}/verify`}
+              className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
+              title="Verified GitHub Tasks & Audit Trail"
+            >
+              <CheckCircle2 size={15} style={{ color: 'var(--status-verified_done, #047857)' }} />
+              {sidebarExpanded && <span>Task Verification</span>}
+            </NavLink>
+
+            <NavLink
+              to={`/p/${code}/annie`}
+              className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
+              title="Mission Control & Real-time Verification Telemetry"
+            >
+              <Sparkles size={15} style={{ color: 'var(--accent, #FF6B3D)' }} />
+              {sidebarExpanded && <span>Mission Control</span>}
+            </NavLink>
+
+            <NavLink
+              to={`/p/${code}/webhooks`}
+              className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
+              title="Live Webhook Ingestion Telemetry"
+            >
+              <Activity size={15} style={{ color: 'var(--status-in_progress, #1D4ED8)' }} />
+              {sidebarExpanded && <span>CI Webhook Log</span>}
+            </NavLink>
+          </div>
+
           {/* Repo link if present */}
           {project.repo_url && sidebarExpanded && (
             <div style={{ marginTop: 'auto', padding: '0 8px' }}>

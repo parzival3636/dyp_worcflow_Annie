@@ -759,6 +759,62 @@ async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @safe
+async def cmd_record(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Record and transcribe a Google Meet or other meeting link."""
+    if not update.message or not update.effective_user:
+        return
+
+    link = " ".join(context.args) if context.args else ""
+    if not link:
+        await update.message.reply_text(
+            "📹 *Record Meeting*: Please provide the meeting link.\nExample: `/record https://meet.google.com/abc-defg-hij`",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+        return
+
+    def _do():
+        with get_session() as session:
+            project, member = _resolve_context(session, update)
+            if not project:
+                return "No project linked to this chat."
+
+            try:
+                import sys
+                from pathlib import Path
+                root = Path(__file__).resolve().parent.parent
+                transcribe_dir = root / "transcribe"
+                if str(transcribe_dir) not in sys.path:
+                    sys.path.insert(0, str(transcribe_dir))
+
+                from app.db import get_db
+                from app.services.meeting_service import create_meeting
+                from app.models.schemas import MeetingCreateRequest
+                from app.api.deps import get_provider
+
+                gen = get_db()
+                t_session = next(gen)
+                try:
+                    req = MeetingCreateRequest(
+                        meeting_link=link,
+                        project_id=project.code,
+                        title=f"Sync for {project.name}",
+                    )
+                    meeting, created = asyncio.run(create_meeting(req, t_session, get_provider()))
+                    if created:
+                        return f"🎙️ *Meeting recorded*: Pilot Notetaker is joining `{link}`! Action items will be extracted and sent here."
+                    else:
+                        return f"🎙️ *Meeting registered* (Status: {meeting.status}). Tracking transcript."
+                finally:
+                    t_session.close()
+            except Exception as e:
+                logger.exception("Failed to dispatch meeting bot")
+                return f"⚠️ Could not join meeting: {str(e)}"
+
+    resp = await asyncio.to_thread(_do)
+    await update.message.reply_text(resp, parse_mode=ParseMode.MARKDOWN)
+
+
+@safe
 async def cmd_followup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Force an immediate check-in cycle, ignoring cadence/cooldown/quiet hours."""
     if not update.message or not update.effective_user:
@@ -1128,6 +1184,7 @@ async def start_bot():
         _bot_app.add_handler(CommandHandler("status", cmd_status))
         _bot_app.add_handler(CommandHandler("ask", cmd_ask))
         _bot_app.add_handler(CommandHandler("report", cmd_report))
+        _bot_app.add_handler(CommandHandler("record", cmd_record))
         _bot_app.add_handler(CommandHandler("followup", cmd_followup))
         _bot_app.add_handler(CommandHandler("linkgroup", cmd_linkgroup))
         _bot_app.add_handler(CommandHandler("join", cmd_join))

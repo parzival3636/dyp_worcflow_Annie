@@ -1,14 +1,8 @@
 """
-Pilot – LLM client.
-
-async call_json(system, user, model_cls, retries=2):
-  • temperature 0.1, JSON-only instruction
-  • strip markdown fences, validate with Pydantic
-  • on validation failure retry with error appended
-  • after retries try LLM_FALLBACK_MODEL once
-  • then return a safe default (never raise)
-  • 30 s timeout, async httpx
-  • logs prompt / response / latency to LLM_LOG_PATH
+Pilot – LLM client and schemas.
+Supports both synchronous calls (for Planner, Guide, Ripple, Contradiction, Routing)
+and asynchronous calls (for Telegram bot DM interpretation, group chat extraction, etc.)
+via AwaitableModelWrapper.
 """
 from __future__ import annotations
 
@@ -17,13 +11,17 @@ import logging
 import os
 import re
 import time
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Type, TypeVar
+from typing import Any, Dict, List, Literal, Optional, Type, TypeVar
 
 import httpx
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
-from config import get_settings
+try:
+    from config import get_settings, settings
+except ImportError:
+    from backend.config import get_settings, settings
 
 logger = logging.getLogger("pilot.llm")
 
@@ -32,166 +30,318 @@ T = TypeVar("T", bound=BaseModel)
 _FENCE_RE = re.compile(r"```(?:json)?\s*\n?(.*?)\n?\s*```", re.DOTALL)
 
 
-def _strip_fences(text: str) -> str:
-    """Remove markdown code fences wrapping JSON."""
-    m = _FENCE_RE.search(text)
-    if m:
-        return m.group(1).strip()
-    return text.strip()
+class PlanGenerationError(Exception):
+    """Raised when plan generation fails even after retries."""
+    pass
 
 
-def _log_llm(prompt_system: str, prompt_user: str, response: str, latency: float, model: str, error: str | None = None):
-    """Append one JSON-lines entry to the LLM log file."""
-    settings = get_settings()
-    log_path = Path(settings.llm_log_path)
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    entry = {
-        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "model": model,
-        "latency_s": round(latency, 3),
-        "system_prompt_len": len(prompt_system),
-        "user_prompt_len": len(prompt_user),
-        "response_len": len(response),
-    }
-    if error:
-        entry["error"] = error
-    try:
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(entry) + "\n")
-    except Exception:
-        logger.warning("Failed to write LLM log", exc_info=True)
+# ---------------------------------------------------------
+# Pydantic Output Models (P1 - P6)
+# ---------------------------------------------------------
+
+class P1Project(BaseModel):
+    name: str
+    summary: str
+    duration_hours: int = 20
 
 
-async def _raw_chat(
-    system: str,
-    user: str,
+class P2Task(BaseModel):
+    title: str
+    description: str
+    acceptance_criteria: list[str] = Field(default_factory=list)
+    effort: int = Field(default=3, ge=1, le=8)
+    depends_on: list[str] = Field(default_factory=list)
+    is_milestone: bool = False
+
+
+class P2Plan(BaseModel):
+    tasks: list[P2Task]
+
+
+class P3Blocker(BaseModel):
+    description: str
+    type: str = "other"
+    needed_from: str = ""
+
+
+class P3Reply(BaseModel):
+    task_key: Optional[str] = None
+    intent: Literal[
+        "progress_update",
+        "blocker",
+        "completion_claim",
+        "question",
+        "off_topic",
+        "unclear",
+    ] = "unclear"
+    new_status: Optional[str] = None
+    progress: Optional[int] = None
+    blocker: Optional[P3Blocker] = None
+    claims_about_others: list[str] = Field(default_factory=list)
+    needs_clarification: bool = False
+    clarifying_question: Optional[str] = None
+    confidence: float = 0.0
+
+
+class P4Criterion(BaseModel):
+    criterion: str
+    met: bool
+    note: str
+
+
+class P4Verdict(BaseModel):
+    verdict: Literal["verified", "partial", "no_evidence"]
+    confidence: float
+    matched_shas: list[str] = Field(default_factory=list)
+    criteria_results: list[P4Criterion] = Field(default_factory=list)
+    reason: str
+
+
+class P5Contradiction(BaseModel):
+    has_contradiction: bool
+    summary: str = ""
+    task_ids: list[str] = Field(default_factory=list)
+    member_ids: list[int] = Field(default_factory=list)
+    questions_to_ask: list[str] = Field(default_factory=list)
+
+
+class P6Route(BaseModel):
+    member_id: int
+    reason: str
+
+
+# ---------------------------------------------------------
+# Dual Sync/Async Awaitable Wrapper
+# ---------------------------------------------------------
+
+class AwaitableModelWrapper:
+    """
+    Wraps a Pydantic model instance so that:
+    1. Synchronous callers can access fields directly: wrapper.tasks, wrapper.member_id
+    2. Asynchronous callers can await it: await wrapper -> returns inner model
+    """
+    def __init__(self, inner: Any):
+        object.__setattr__(self, "_inner", inner)
+
+    def __await__(self):
+        async def _coro():
+            return object.__getattribute__(self, "_inner")
+        return _coro().__await__()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(object.__getattribute__(self, "_inner"), name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        setattr(object.__getattribute__(self, "_inner"), name, value)
+
+    def __getitem__(self, item: Any) -> Any:
+        return object.__getattribute__(self, "_inner")[item]
+
+    def __iter__(self):
+        return iter(object.__getattribute__(self, "_inner"))
+
+    def __repr__(self) -> str:
+        return repr(object.__getattribute__(self, "_inner"))
+
+
+# ---------------------------------------------------------
+# JSON Extraction, Logging, and Fallbacks
+# ---------------------------------------------------------
+
+def extract_json_str(text: str) -> str:
+    """Strips markdown code fences and extracts the first balanced JSON object."""
+    text = text.strip()
+    if "```" in text:
+        match = _FENCE_RE.search(text)
+        if match:
+            text = match.group(1).strip()
+        else:
+            lines = [line for line in text.splitlines() if not line.strip().startswith("```")]
+            text = "\n".join(lines).strip()
+
+    if (text.startswith("{") and text.endswith("}")) or (text.startswith("[") and text.endswith("]")):
+        return text
+
+    first_brace = text.find("{")
+    if first_brace != -1:
+        depth = 0
+        in_string = False
+        escape = False
+        for i in range(first_brace, len(text)):
+            c = text[i]
+            if escape:
+                escape = False
+                continue
+            if c == "\\":
+                escape = True
+                continue
+            if c == '"':
+                in_string = not in_string
+                continue
+            if not in_string:
+                if c == "{":
+                    depth += 1
+                elif c == "}":
+                    depth -= 1
+                    if depth == 0:
+                        return text[first_brace : i + 1]
+
+    return text
+
+
+def get_fallback(model_cls: type[BaseModel], user_prompt: str) -> BaseModel:
+    """Returns a safe fallback model if the LLM fails all retries."""
+    if issubclass(model_cls, P3Reply):
+        return P3Reply(
+            intent="unclear",
+            needs_clarification=True,
+            clarifying_question="Could you tell me a bit more about where this task stands?",
+            confidence=0.0,
+        )
+    elif issubclass(model_cls, P4Verdict):
+        return P4Verdict(
+            verdict="no_evidence",
+            confidence=0.0,
+            matched_shas=[],
+            criteria_results=[],
+            reason="Verifier unavailable",
+        )
+    elif issubclass(model_cls, P5Contradiction):
+        return P5Contradiction(has_contradiction=False)
+    elif issubclass(model_cls, P6Route):
+        return P6Route(member_id=1, reason="Fallback to lead")
+    elif issubclass(model_cls, P1Project):
+        clean_name = user_prompt.strip()[:40] or "Project"
+        return P1Project(name=clean_name, summary="Project generated via fallback", duration_hours=20)
+    elif issubclass(model_cls, P2Plan):
+        raise PlanGenerationError("Failed to generate task plan after retries")
+
+    # Generic fallback using field defaults
+    defaults = {}
+    for name, field_info in model_cls.model_fields.items():
+        if field_info.default_factory is not None:
+            defaults[name] = field_info.default_factory()
+        elif field_info.default is not None:
+            defaults[name] = field_info.default
+        else:
+            defaults[name] = None
+    return model_cls.model_construct(**defaults)
+
+
+def _log_llm(
+    system_prompt: str,
+    user_prompt: str,
+    raw_response: Optional[str],
+    latency_s: float,
     model: str,
-    base_url: str,
-    api_key: str,
-) -> str:
-    """Send a chat completion request and return the raw text content."""
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
-    body = {
+    error: Optional[str] = None,
+):
+    cfg = get_settings()
+    log_dir = os.path.dirname(cfg.llm_log_path) or "docs/demo-evidence"
+    os.makedirs(log_dir, exist_ok=True)
+    record = {
+        "ts": datetime.now(timezone.utc).isoformat(),
         "model": model,
-        "temperature": 0.1,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
+        "latency_s": round(latency_s, 3),
+        "system_prompt_len": len(system_prompt),
+        "user_prompt_len": len(user_prompt),
+        "raw_response": raw_response[:500] if raw_response else None,
+        "error": error,
     }
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(f"{base_url}/chat/completions", json=body, headers=headers)
-        resp.raise_for_status()
-        data = resp.json()
-        return data["choices"][0]["message"]["content"]
+    try:
+        with open(cfg.llm_log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception:
+        pass
 
 
-async def call_json(
+# ---------------------------------------------------------
+# Core Function: call_json (Dual Sync/Async)
+# ---------------------------------------------------------
+
+def call_json(
     system: str,
     user: str,
     model_cls: Type[T],
     retries: int = 2,
-) -> T:
+    http_client: Optional[httpx.Client] = None,
+) -> Any:
     """
-    Call the LLM asking for JSON matching *model_cls*.
-
-    Retry on validation failure (appending the error to the user prompt).
-    After *retries* tries on the primary model, try the fallback model once.
-    If everything fails, return a **safe default** using model_cls.model_construct().
-
-    NEVER raises into a handler.
+    Calls LLM asking for JSON matching model_cls.
+    Returns an AwaitableModelWrapper so it can be called synchronously:
+        res = call_json(...)
+        print(res.title)
+    OR asynchronously:
+        res = await call_json(...)
     """
-    settings = get_settings()
+    cfg = get_settings()
+    base_url = (cfg.llm_base_url or "http://localhost:11434/v1").rstrip("/")
+    url = f"{base_url}/chat/completions"
+
+    headers = {"Content-Type": "application/json"}
+    if cfg.llm_api_key:
+        headers["Authorization"] = f"Bearer {cfg.llm_api_key}"
+
     json_instruction = (
-        "\n\nIMPORTANT: Reply ONLY with valid JSON matching this schema, no prose, "
-        "no markdown fences:\n" + json.dumps(model_cls.model_json_schema(), indent=2)
+        "\n\nReply ONLY with valid JSON matching this schema, no prose, no markdown:\n"
+        + json.dumps(model_cls.model_json_schema(), indent=2)
     )
     full_system = system + json_instruction
+    current_user_prompt = user
 
-    models_to_try: list[str] = [settings.llm_model] * retries
-    if settings.llm_fallback_model:
-        models_to_try.append(settings.llm_fallback_model)
+    client = http_client if http_client is not None else httpx.Client(timeout=8.0)
+    attempts_left = retries + 1
 
-    current_user = user
-    last_error: str | None = None
+    try:
+        while attempts_left > 0:
+            attempts_left -= 1
+            start_time = time.monotonic()
+            raw_text = None
+            error_str = None
 
-    for i, model in enumerate(models_to_try):
-        t0 = time.monotonic()
-        raw = ""
-        try:
-            raw = await _raw_chat(full_system, current_user, model, settings.llm_base_url, settings.llm_api_key)
-            latency = time.monotonic() - t0
-            _log_llm(full_system, current_user, raw, latency, model)
+            payload = {
+                "model": cfg.llm_model,
+                "messages": [
+                    {"role": "system", "content": full_system},
+                    {"role": "user", "content": current_user_prompt},
+                ],
+                "temperature": 0.1,
+            }
 
-            cleaned = _strip_fences(raw)
-            result = model_cls.model_validate_json(cleaned)
-            return result
+            try:
+                resp = client.post(url, json=payload, headers=headers)
+                latency = time.monotonic() - start_time
 
-        except ValidationError as ve:
-            latency = time.monotonic() - t0
-            last_error = str(ve)
-            _log_llm(full_system, current_user, raw, latency, model, error=last_error)
-            logger.warning("LLM JSON validation failed (attempt %d): %s", i + 1, last_error[:200])
-            # Append error for next retry
-            current_user = user + f"\n\n[Previous response had a validation error: {last_error}. Please fix and reply with valid JSON only.]"
+                if resp.status_code != 200:
+                    error_str = f"HTTP {resp.status_code}: {resp.text}"
+                    _log_llm(full_system, current_user_prompt, resp.text, latency, cfg.llm_model, error=error_str)
+                    current_user_prompt = f"{user}\n\nPrevious error: {error_str}. Fix and return valid JSON only."
+                    continue
 
-        except Exception as exc:
-            latency = time.monotonic() - t0
-            last_error = str(exc)
-            _log_llm(full_system, current_user, raw, latency, model, error=last_error)
-            logger.warning("LLM call failed (attempt %d): %s", i + 1, last_error[:200])
+                resp_json = resp.json()
+                raw_text = resp_json["choices"][0]["message"]["content"]
+                cleaned = extract_json_str(raw_text)
+                validated = model_cls.model_validate_json(cleaned)
+                _log_llm(full_system, current_user_prompt, raw_text, latency, cfg.llm_model)
+                return AwaitableModelWrapper(validated)
 
-    # All attempts exhausted → safe default
-    logger.error("LLM exhausted all attempts. Returning safe default for %s", model_cls.__name__)
-    return _safe_default(model_cls)
+            except (httpx.ConnectError, httpx.RequestError, httpx.TimeoutException) as exc:
+                latency = time.monotonic() - start_time
+                error_str = f"Network error: {str(exc)}"
+                _log_llm(full_system, current_user_prompt, None, latency, cfg.llm_model, error=error_str)
+                # If connection refused or offline, don't waste time retrying
+                break
 
+            except (ValidationError, json.JSONDecodeError, KeyError, IndexError) as exc:
+                latency = time.monotonic() - start_time
+                error_str = f"Validation/Parsing error: {str(exc)}"
+                _log_llm(full_system, current_user_prompt, raw_text, latency, cfg.llm_model, error=error_str)
+                current_user_prompt = f"{user}\n\n[Validation error: {error_str}. Please fix and reply with JSON only.]"
 
-def _safe_default(model_cls: Type[T]) -> T:
-    """
-    Build a 'safe' instance of model_cls that does nothing harmful.
-    Uses model_construct() with sensible zero-values.
-    """
-    from pydantic_core import PydanticUndefined
+    finally:
+        if http_client is None:
+            client.close()
 
-    # Build kwargs from field defaults and annotations
-    defaults: dict = {}
-    for name, field_info in model_cls.model_fields.items():
-        # Check default_factory first (e.g. Field(default_factory=list))
-        if field_info.default_factory is not None:
-            defaults[name] = field_info.default_factory()
-        elif field_info.default is not None and field_info.default is not PydanticUndefined:
-            defaults[name] = field_info.default
-        else:
-            anno = field_info.annotation
-            if anno is str or anno == str:
-                defaults[name] = ""
-            elif anno is int or anno == int:
-                defaults[name] = 0
-            elif anno is float or anno == float:
-                defaults[name] = 0.0
-            elif anno is bool or anno == bool:
-                defaults[name] = False
-            elif anno is list or (hasattr(anno, "__origin__") and getattr(anno, "__origin__", None) is list):
-                defaults[name] = []
-            else:
-                defaults[name] = None
-
-    # Override known fields for safety
-    if "intent" in defaults:
-        defaults["intent"] = "unclear"
-    if "needs_clarification" in defaults:
-        defaults["needs_clarification"] = True
-    if "confidence" in defaults:
-        defaults["confidence"] = 0.0
-    if "kind" in defaults:
-        defaults["kind"] = "none"
-    if "observations" in defaults:
-        defaults["observations"] = []
-    if "results" in defaults:
-        defaults["results"] = []
-
-    return model_cls.model_construct(**defaults)
-
+    # Fallback if exhausted
+    fallback = get_fallback(model_cls, user)
+    return AwaitableModelWrapper(fallback)

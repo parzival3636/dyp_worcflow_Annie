@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import {
   apiPost, apiPatch, apiDelete,
@@ -6,10 +6,12 @@ import {
 } from '../hooks/useSnapshot';
 import { useToast } from '../components/ToastProvider';
 import GithubIcon from '../components/GithubIcon';
+import api from '../lib/api';
 import {
   Send, Users, GitBranch, CheckCircle2, AlertTriangle, ShieldCheck,
   Plus, Trash2, ExternalLink, Copy, Check, Rocket, MessageSquare,
-  Sparkles, RefreshCw, Layers, ArrowRight, ShieldAlert, KeyRound
+  Sparkles, RefreshCw, Layers, ArrowRight, ShieldAlert, KeyRound,
+  Globe, Lock, X, Clock
 } from 'lucide-react';
 import './LeaderPortal.css';
 
@@ -22,10 +24,22 @@ export default function LeaderPortal() {
   const tasks = snapshot?.tasks || [];
   const contradictions = snapshot?.contradictions || [];
 
-  // Form states: GitHub repo setup
+  // Form states: GitHub repo setup (existing link)
   const [repoUrl, setRepoUrl] = useState(project.repo_url || '');
   const [repoName, setRepoName] = useState(project.repo_full_name || '');
   const [savingRepo, setSavingRepo] = useState(false);
+
+  // Form states: Annie Autonomous Repo Creation & Webhook Pipeline
+  const [repoMode, setRepoMode] = useState(project.repo_url ? 'link' : 'create'); // 'create' | 'link'
+  const [newRepoName, setNewRepoName] = useState(code ? `${code}-platform` : 'pilot-team-repo');
+  const [newRepoDesc, setNewRepoDesc] = useState(project.idea || 'Autonomous Hackathon Project created via Pilot');
+  const [newRepoPrivate, setNewRepoPrivate] = useState(false);
+  const [extraCollaborator, setExtraCollaborator] = useState('');
+  const [selectedCollabs, setSelectedCollabs] = useState([]);
+  const [creatingRepo, setCreatingRepo] = useState(false);
+  const [createdRepoResult, setCreatedRepoResult] = useState(null);
+  const [trackedRepos, setTrackedRepos] = useState([]);
+  const [loadingTrackedRepos, setLoadingTrackedRepos] = useState(false);
 
   // Form states: Add collaborator
   const [collabName, setCollabName] = useState('');
@@ -64,6 +78,101 @@ export default function LeaderPortal() {
       addToast('Repository settings saved (demo mode)', 'green');
     } finally {
       setSavingRepo(false);
+    }
+  };
+
+  // Fetch tracked repos from Supabase / Annie backend
+  const fetchTrackedRepos = async () => {
+    setLoadingTrackedRepos(true);
+    try {
+      const res = await api.get('/repos/');
+      setTrackedRepos(res.data.repos || []);
+    } catch (err) {
+      console.warn('Could not load tracked repos:', err);
+    } finally {
+      setLoadingTrackedRepos(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTrackedRepos();
+  }, []);
+
+  // Pre-populate collaborators from project members with GitHub logins
+  useEffect(() => {
+    if (members?.length > 0 && selectedCollabs.length === 0) {
+      const ghLogins = members
+        .map(m => m.github_login?.trim().replace(/^@/, ''))
+        .filter(Boolean);
+      if (ghLogins.length > 0) {
+        setSelectedCollabs(Array.from(new Set(ghLogins)));
+      }
+    }
+  }, [members]);
+
+  const toggleCollaborator = (username) => {
+    if (selectedCollabs.includes(username)) {
+      setSelectedCollabs(selectedCollabs.filter(c => c !== username));
+    } else {
+      setSelectedCollabs([...selectedCollabs, username]);
+    }
+  };
+
+  const addExtraCollaborator = (e) => {
+    e?.preventDefault();
+    const trimmed = extraCollaborator.trim().replace(/^@/, '');
+    if (!trimmed) return;
+    if (selectedCollabs.includes(trimmed)) {
+      addToast('Collaborator already added', 'muted');
+      return;
+    }
+    setSelectedCollabs([...selectedCollabs, trimmed]);
+    setExtraCollaborator('');
+  };
+
+  const handleCreateRepo = async (e) => {
+    e.preventDefault();
+    if (!newRepoName.trim()) {
+      addToast('Repository name is required', 'red');
+      return;
+    }
+
+    setCreatingRepo(true);
+    setCreatedRepoResult(null);
+
+    try {
+      const collabsToInvite = Array.from(new Set([
+        ...selectedCollabs,
+        ...(extraCollaborator.trim() ? [extraCollaborator.trim().replace(/^@/, '')] : [])
+      ])).filter(Boolean);
+
+      const res = await api.post('/repos/create', {
+        name: newRepoName.trim(),
+        description: newRepoDesc.trim() || undefined,
+        private: newRepoPrivate,
+        collaborators: collabsToInvite,
+      });
+
+      setCreatedRepoResult(res.data);
+      addToast(`⚡ Repository ${res.data.repo_name} created & auto-wired to Supabase!`, 'green');
+
+      // Update Pilot project with the newly created repository
+      if (res.data.repo_url) {
+        await apiPatch(`/projects/${code}`, {
+          repo_url: res.data.repo_url,
+          repo_full_name: `${res.data.repo_name}`,
+        });
+        setRepoUrl(res.data.repo_url);
+        setRepoName(res.data.repo_name);
+      }
+
+      if (refetch) refetch();
+      fetchTrackedRepos();
+    } catch (err) {
+      const msg = err.response?.data?.detail || err.message || 'Failed to create GitHub repository';
+      addToast(msg, 'red');
+    } finally {
+      setCreatingRepo(false);
     }
   };
 
@@ -189,78 +298,372 @@ export default function LeaderPortal() {
       <div className="leader-grid">
         {/* Left Column: Repo & Collaborators */}
         <div className="leader-col">
-          {/* Card 1: GitHub Repository Integration */}
+          {/* Card 1: GitHub Repository & Autonomous Verification Pipeline */}
           <div className="leader-card">
             <div className="leader-card-header">
               <div className="flex items-center gap-2">
                 <GithubIcon size={18} className="text-primary" />
-                <h2 className="leader-card-title">GitHub Repository Integration</h2>
+                <h2 className="leader-card-title">GitHub Repo &amp; AI Verification Engine</h2>
               </div>
-              <span className="pill pill-green">Polling Every 45s</span>
+              <span className="pill pill-orange">⚡ Annie Engine Active</span>
             </div>
 
             <p className="leader-card-desc">
-              All builder commits pushed to this repository are parsed against task keys (e.g. <code className="font-mono text-blue">[T-3]</code>) and verified by the LLM verifier against acceptance criteria.
+              Create an official project repository on GitHub with auto-wired Supabase CI webhooks and collaborator invitations, or link an existing repo.
             </p>
 
-            <form onSubmit={handleSaveRepo} className="leader-form">
-              <div className="form-group">
-                <label>Repository Full Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g. pilot-team/payflow"
-                  value={repoName}
-                  onChange={(e) => setRepoName(e.target.value)}
-                />
-              </div>
+            {/* Mode Switcher */}
+            <div style={{ display: 'flex', gap: '8px', background: 'var(--surface-raised, #F1F5F9)', padding: '4px', borderRadius: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setRepoMode('create')}
+                className="btn btn-sm"
+                style={{
+                  flex: 1,
+                  background: repoMode === 'create' ? '#FFFFFF' : 'transparent',
+                  color: repoMode === 'create' ? 'var(--accent, #FF6B3D)' : 'var(--text-secondary, #334155)',
+                  boxShadow: repoMode === 'create' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                  border: repoMode === 'create' ? '1px solid var(--border, #E2E8F0)' : '1px solid transparent',
+                  fontWeight: repoMode === 'create' ? 600 : 500,
+                }}
+              >
+                <Sparkles size={13} />
+                <span>Autonomous Repo Creation</span>
+              </button>
 
-              <div className="form-group">
-                <label>Repository URL</label>
-                <div className="input-group">
+              <button
+                type="button"
+                onClick={() => setRepoMode('link')}
+                className="btn btn-sm"
+                style={{
+                  flex: 1,
+                  background: repoMode === 'link' ? '#FFFFFF' : 'transparent',
+                  color: repoMode === 'link' ? 'var(--accent, #FF6B3D)' : 'var(--text-secondary, #334155)',
+                  boxShadow: repoMode === 'link' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                  border: repoMode === 'link' ? '1px solid var(--border, #E2E8F0)' : '1px solid transparent',
+                  fontWeight: repoMode === 'link' ? 600 : 500,
+                }}
+              >
+                <GitBranch size={13} />
+                <span>Link Existing Repo</span>
+              </button>
+            </div>
+
+            {repoMode === 'create' ? (
+              <form onSubmit={handleCreateRepo} className="leader-form">
+                <div className="form-group">
+                  <label>Repository Name *</label>
                   <input
-                    type="url"
-                    placeholder="https://github.com/pilot-team/payflow"
-                    value={repoUrl}
-                    onChange={(e) => setRepoUrl(e.target.value)}
+                    type="text"
+                    required
+                    placeholder="e.g. payflow-backend"
+                    value={newRepoName}
+                    onChange={(e) => setNewRepoName(e.target.value)}
                   />
-                  {repoUrl && (
-                    <a
-                      href={repoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-secondary btn-icon-only"
-                      title="Open repository on GitHub"
+                </div>
+
+                <div className="form-group">
+                  <label>Repository Description (optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Real-time transaction microservices and payment webhook handler"
+                    value={newRepoDesc}
+                    onChange={(e) => setNewRepoDesc(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Repository Visibility</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setNewRepoPrivate(false)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: !newRepoPrivate ? '1.5px solid var(--accent, #FF6B3D)' : '1px solid var(--border, #E2E8F0)',
+                        background: !newRepoPrivate ? 'rgba(255, 107, 61, 0.08)' : '#FFFFFF',
+                        color: !newRepoPrivate ? 'var(--accent, #FF6B3D)' : 'var(--text-secondary, #334155)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                      }}
                     >
-                      <ExternalLink size={15} />
-                    </a>
+                      <Globe size={14} /> Public Repository
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewRepoPrivate(true)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: newRepoPrivate ? '1.5px solid var(--accent, #FF6B3D)' : '1px solid var(--border, #E2E8F0)',
+                        background: newRepoPrivate ? 'rgba(255, 107, 61, 0.08)' : '#FFFFFF',
+                        color: newRepoPrivate ? 'var(--accent, #FF6B3D)' : 'var(--text-secondary, #334155)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      <Lock size={14} /> Private Repository
+                    </button>
+                  </div>
+                </div>
+
+                {/* Team Collaborator Multi-select & Input */}
+                <div className="form-group">
+                  <label>Auto-Invite Project Collaborators (GitHub Handles)</label>
+                  {members.filter(m => m.github_login).length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                      {members.filter(m => m.github_login).map(m => {
+                        const login = m.github_login.trim().replace(/^@/, '');
+                        const isSelected = selectedCollabs.includes(login);
+                        return (
+                          <button
+                            type="button"
+                            key={m.id}
+                            onClick={() => toggleCollaborator(login)}
+                            style={{
+                              background: isSelected ? 'rgba(255, 107, 61, 0.1)' : 'var(--surface-raised, #F1F5F9)',
+                              border: isSelected ? '1px solid var(--accent, #FF6B3D)' : '1px solid var(--border, #E2E8F0)',
+                              color: isSelected ? 'var(--accent, #FF6B3D)' : 'var(--text-secondary, #334155)',
+                              padding: '3px 8px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontWeight: 500,
+                            }}
+                          >
+                            <span>@{login} ({m.name})</span>
+                            {isSelected && <Check size={12} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="input-group">
+                    <input
+                      type="text"
+                      placeholder="Add external username e.g. octocat"
+                      value={extraCollaborator}
+                      onChange={(e) => setExtraCollaborator(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addExtraCollaborator();
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={addExtraCollaborator}
+                    >
+                      <Plus size={13} />
+                      <span>Add</span>
+                    </button>
+                  </div>
+
+                  {selectedCollabs.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                      {selectedCollabs.map(u => (
+                        <span
+                          key={u}
+                          style={{
+                            background: '#EFF6FF',
+                            border: '1px solid #BFDBFE',
+                            color: '#1D4ED8',
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '11px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          @{u}
+                          <X
+                            size={11}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => toggleCollaborator(u)}
+                          />
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
-              </div>
 
-              <div className="repo-rule-box">
-                <div className="rule-title">
-                  <KeyRound size={14} className="text-amber" />
-                  <strong>Commit Convention Rule</strong>
-                </div>
-                <div className="rule-desc">
-                  Every commit message must include its assigned task key:
-                  <div className="code-badge font-mono">git commit -m "[T-2] Implement Stripe payment API webhook"</div>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center" style={{ marginTop: 8 }}>
-                <span className="text-xs text-muted">
-                  Webhook / PAT auto-verifies commits and updates task statuses.
-                </span>
                 <button
                   type="submit"
-                  className="btn btn-secondary"
-                  disabled={savingRepo}
+                  className="btn btn-primary"
+                  disabled={creatingRepo || !newRepoName.trim()}
+                  style={{ width: '100%', padding: '10px 16px', marginTop: 4 }}
                 >
-                  {savingRepo ? 'Saving...' : 'Save Repository Settings'}
+                  {creatingRepo ? (
+                    <>
+                      <Clock size={15} className="animate-spin" />
+                      <span>Creating Repository &amp; Registering CI Webhook...</span>
+                    </>
+                  ) : (
+                    <>
+                      <GitBranch size={15} />
+                      <span>⚡ Create GitHub Repository &amp; Wire Supabase Webhook</span>
+                    </>
+                  )}
                 </button>
+
+                {createdRepoResult && (
+                  <div style={{
+                    padding: '12px 14px',
+                    background: '#ECFDF5',
+                    border: '1px solid #A7F3D0',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    color: '#065F46',
+                    marginTop: 8,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}>
+                      <CheckCircle2 size={15} className="text-green" />
+                      <span>Repository created and verified on GitHub!</span>
+                    </div>
+                    <div style={{ marginTop: '4px' }}>
+                      <strong>URL:</strong>{' '}
+                      <a
+                        href={createdRepoResult.repo_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: '#047857', textDecoration: 'underline' }}
+                      >
+                        {createdRepoResult.repo_url}
+                      </a>
+                    </div>
+                    {createdRepoResult.collaborators?.length > 0 && (
+                      <div style={{ marginTop: '6px', fontSize: '11px' }}>
+                        Invited collaborators: {createdRepoResult.collaborators.map(c => `@${c.username} (${c.status})`).join(', ')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </form>
+            ) : (
+              <form onSubmit={handleSaveRepo} className="leader-form">
+                <div className="form-group">
+                  <label>Repository Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. pilot-team/payflow"
+                    value={repoName}
+                    onChange={(e) => setRepoName(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Repository URL</label>
+                  <div className="input-group">
+                    <input
+                      type="url"
+                      placeholder="https://github.com/pilot-team/payflow"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                    />
+                    {repoUrl && (
+                      <a
+                        href={repoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary btn-icon-only"
+                        title="Open repository on GitHub"
+                      >
+                        <ExternalLink size={15} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="repo-rule-box">
+                  <div className="rule-title">
+                    <KeyRound size={14} className="text-amber" />
+                    <strong>Commit Convention Rule</strong>
+                  </div>
+                  <div className="rule-desc">
+                    Every commit message must include its assigned task key:
+                    <div className="code-badge font-mono">git commit -m "[T-2] Implement Stripe payment API webhook"</div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center" style={{ marginTop: 8 }}>
+                  <span className="text-xs text-muted">
+                    Webhook / PAT auto-verifies commits and updates task statuses.
+                  </span>
+                  <button
+                    type="submit"
+                    className="btn btn-secondary"
+                    disabled={savingRepo}
+                  >
+                    {savingRepo ? 'Saving...' : 'Save Repository Settings'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Tracked Repositories in Supabase */}
+            {trackedRepos.length > 0 && (
+              <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--border, #E2E8F0)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary, #334155)' }}>
+                    Tracked in Supabase ({trackedRepos.length})
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#10B981', fontWeight: 600 }}>● Live Webhooks Active</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {trackedRepos.slice(0, 3).map(r => (
+                    <div
+                      key={r.id || r.name}
+                      style={{
+                        padding: '6px 10px',
+                        background: 'var(--surface-raised, #F1F5F9)',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border, #E2E8F0)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '12px',
+                      }}
+                    >
+                      <div className="truncate" style={{ maxWidth: '70%' }}>
+                        <strong>{r.full_name || r.name}</strong>
+                        <span style={{ color: 'var(--text-muted, #64748B)', marginLeft: '6px', fontSize: '11px' }}>
+                          ({r.collaborators?.length || 0} members)
+                        </span>
+                      </div>
+                      <a
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-ghost btn-sm"
+                        style={{ padding: '2px 6px', fontSize: '11px', height: 'auto', color: 'var(--accent, #FF6B3D)' }}
+                      >
+                        GitHub <ExternalLink size={11} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </form>
+            )}
           </div>
 
           {/* Card 2: Collaborators & Telegram Numbers */}

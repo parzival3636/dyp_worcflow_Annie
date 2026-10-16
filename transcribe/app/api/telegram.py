@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_session
 from app.config import get_settings
-from app.integrations.tasks import InMemoryTaskSink, TaskPayload, TaskSink
+from app.integrations.tasks import PilotDbTaskSink, TaskPayload, TaskSink
 from app.models.orm import (
     Meeting,
     MeetingStatusEnum,
@@ -24,7 +24,7 @@ router = APIRouter()
 logger = logging.getLogger("transcribe.telegram_api")
 
 # Shared task sink instance for application runtime
-_task_sink: TaskSink = InMemoryTaskSink()
+_task_sink: TaskSink = PilotDbTaskSink()
 
 
 def get_task_sink() -> TaskSink:

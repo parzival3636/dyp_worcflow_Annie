@@ -68,6 +68,11 @@ def _check_rate_limit(project_id: str):
     _rate_limits[project_id].append(now)
 
 
+@router.get("/health")
+async def transcribe_health():
+    return JSONResponse({"status": "ok", "service": "transcribe"})
+
+
 @router.post("/meetings", response_model=MeetingCreateResponse)
 async def create_new_meeting(
     payload: MeetingCreateRequest,

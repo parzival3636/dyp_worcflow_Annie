@@ -427,26 +427,67 @@ def override_verify(code: str, key: str):
         )
         session.add(ev)
         session.commit()
+
+        try:
+            from ripple import risk_recompute
+            risk_recompute(session, project.id)
+            session.commit()
+        except Exception:
+            pass
+
         return {"status": "ok"}
 
 
 # ── Project Lifecycle Operations ───────────────────────────────────────────
 
+class PlanRequestBody(BaseModel):
+    idea: Optional[str] = None
+    team_size: Optional[int] = 4
+    skills: Optional[List[str]] = None
+    duration_hours: Optional[int] = 20
+
+
 @router.post("/projects/{code}/plan")
-async def trigger_plan(code: str):
-    """Trigger AI task generation."""
-    return {"status": "ok", "detail": "Task generation queued"}
-
-
-@router.post("/projects/{code}/bundle")
-def preview_bundle(code: str):
-    """Bundle tasks and preview balanced assignments."""
+def trigger_plan(code: str, body: Optional[PlanRequestBody] = None):
+    """Trigger AI task generation via Planner."""
+    from planner import generate_plan, PlanGenerationError
     with get_session() as session:
         project = session.exec(select(Project).where(Project.code == code)).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
-        blocks = session.exec(select(Block).where(Block.project_id == project.id)).all()
+        req = body or PlanRequestBody()
+        try:
+            tasks = generate_plan(
+                session=session,
+                project_id=project.id,
+                idea=req.idea or project.idea,
+                team_size=req.team_size or 4,
+                skills=req.skills,
+                duration_hours=req.duration_hours or 20,
+            )
+            session.commit()
+            return {"status": "ok", "task_count": len(tasks), "tasks": [t.key for t in tasks]}
+        except PlanGenerationError as e:
+            session.rollback()
+            raise HTTPException(status_code=502, detail=f"Failed to generate plan: {e}")
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(status_code=500, detail=f"Planning error: {e}")
+
+
+@router.post("/projects/{code}/bundle")
+def preview_bundle(code: str):
+    """Bundle tasks and preview balanced assignments."""
+    from planner import bundle, assign
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        blocks = bundle(session, project.id)
+        preview = assign(session, project.id)
+        session.commit()
         return {
             "status": "ok",
             "blocks": [
@@ -457,14 +498,25 @@ def preview_bundle(code: str):
                     "total_effort": b.total_effort or 10,
                     "oversize_flag": b.oversize_flag,
                 }
-                for b in blocks
+                for b in preview.get("blocks", blocks)
             ],
+            "loads": preview.get("loads", {}),
+            "oversize_warnings": preview.get("oversize_warnings", []),
         }
 
 
 @router.post("/projects/{code}/confirm-assignment")
 def confirm_assignment(code: str):
-    return {"status": "ok", "detail": "Assignments confirmed"}
+    """Confirm block assignments and lock task schedules."""
+    from planner import confirm_assignment as do_confirm
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        result = do_confirm(session, project.id)
+        session.commit()
+        return {"status": "ok", "detail": "Assignments confirmed", **result}
 
 
 @router.post("/projects/{code}/kickoff")
@@ -537,41 +589,78 @@ def reset_project(code: str):
         return {"status": "ok", "detail": "Project reset"}
 
 
-# ── Guide Q&A Chat ─────────────────────────────────────────────────────────
+# ── Guide Q&A Chat & Project Reports ──────────────────────────────────────
 
 class AskBody(BaseModel):
     question: str
 
 
 @router.post("/projects/{code}/ask")
-async def ask_guide(code: str, body: AskBody):
-    """Q&A with Guide agent."""
-    q = body.question.lower()
-
+def ask_guide(code: str, body: AskBody):
+    """Q&A with Guide agent using tools and factual citation verification."""
+    from guide import run_guide_query
     with get_session() as session:
         project = session.exec(select(Project).where(Project.code == code)).first()
         if not project:
-            return JSONResponse({"answer": "Project not found"})
+            raise HTTPException(status_code=404, detail="Project not found")
 
-        tasks = session.exec(select(Task).where(Task.project_id == project.id)).all()
-        blocked = [t for t in tasks if t.status == "blocked"]
-        verified = [t for t in tasks if t.status == "verified_done"]
+        try:
+            result = run_guide_query(session, project.id, body.question)
+            return result
+        except Exception:
+            q = body.question.lower()
+            tasks = session.exec(select(Task).where(Task.project_id == project.id)).all()
+            blocked = [t for t in tasks if t.status == "blocked"]
+            verified = [t for t in tasks if t.status == "verified_done"]
 
-        if "block" in q:
-            if blocked:
-                keys = ", ".join(f"[{t.key}] {t.title}" for t in blocked)
-                return {"answer": f"Currently, there is 1 active bottleneck: {keys}. Check the Graph view to trace downstream ripple slip."}
-            return {"answer": "No tasks are currently blocked. Commits and transitions are progressing smoothly."}
+            if "block" in q:
+                if blocked:
+                    keys = ", ".join(f"[{t.key}] {t.title}" for t in blocked)
+                    return {"answer": f"Currently, there is an active bottleneck: {keys}. Downstream tasks may experience ripple slip."}
+                return {"answer": "No tasks are currently blocked. Commits and transitions are progressing smoothly."}
 
-        if "risk" in q or "deadline" in q or "milestone" in q:
-            return {"answer": "The Demo Milestone is at risk due to upstream delays on backend API integrations. Expected slip is ~3.5 hours unless unblocked."}
+            if "risk" in q or "deadline" in q or "milestone" in q:
+                return {"answer": "The Demo Milestone is being monitored for potential slip from upstream dependencies."}
 
-        if "progress" in q or "commit" in q:
-            return {"answer": f"Team progress: {len(verified)}/{len(tasks)} tasks verified done. GitHub commits are verified every 45s against acceptance criteria."}
+            if "progress" in q or "commit" in q:
+                return {"answer": f"Team progress: {len(verified)}/{len(tasks)} tasks verified done."}
 
-        return {
-            "answer": f"I'm monitoring project {project.name} ({code}). We have {len(tasks)} tasks total, with {len(verified)} verified done and {len(blocked)} blocked. All commits require [T-x] task keys in the commit message."
-        }
+            return {
+                "answer": f"I'm monitoring project {project.name} ({code}). We have {len(tasks)} tasks total, with {len(verified)} verified done and {len(blocked)} blocked."
+            }
+
+
+@router.post("/projects/{code}/report")
+def get_project_report(code: str):
+    """Generate final project digest with member contributions, completed tasks, and blockers."""
+    from guide import generate_report
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        return generate_report(session, project.id)
+
+
+class SplitRequestBody(BaseModel):
+    block_id: int
+    apply: Optional[bool] = False
+
+
+@router.post("/projects/{code}/split")
+def handle_split(code: str, body: SplitRequestBody):
+    """Propose or apply a block split to rebalance workload."""
+    from planner import propose_split, apply_split
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        if body.apply:
+            res = apply_split(session, body.block_id)
+            session.commit()
+            return res
+        return propose_split(session, body.block_id)
 
 
 # ── Project Info & Collaborators Management ───────────────────────────────
