@@ -9,8 +9,10 @@ from datetime import datetime
 from typing import Any, List, Optional
 
 from sqlmodel import Column, Field, SQLModel
-from sqlalchemy import BigInteger, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Text, UniqueConstraint, JSON
 from sqlalchemy.dialects.postgresql import JSONB
+
+JSONB_COMPAT = JSONB().with_variant(JSON(), "sqlite")
 
 
 # ---------------------------------------------------------------------------
@@ -19,7 +21,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 class Project(SQLModel, table=True):
     __tablename__ = "project"
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     code: str = Field(sa_column=Column(Text, unique=True, nullable=False))
     name: str = Field(sa_column=Column(Text, nullable=False))
     idea: Optional[str] = None
@@ -43,7 +45,7 @@ class Project(SQLModel, table=True):
 class Member(SQLModel, table=True):
     __tablename__ = "member"
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     project_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     name: Optional[str] = None
     telegram_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
@@ -51,7 +53,7 @@ class Member(SQLModel, table=True):
     github_login: Optional[str] = None
     skills: Optional[str] = None
 
-    aliases: Any = Field(default=[], sa_column=Column(JSONB, server_default="'[]'"))
+    aliases: Any = Field(default=[], sa_column=Column(JSONB_COMPAT, server_default="'[]'"))
 
     role: str = Field(default="member")           # lead | member
     invite_status: str = Field(default="pending")
@@ -67,7 +69,7 @@ class Member(SQLModel, table=True):
 class Block(SQLModel, table=True):
     __tablename__ = "block"
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     project_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     name: Optional[str] = None
     total_effort: Optional[int] = None
@@ -82,12 +84,12 @@ class Task(SQLModel, table=True):
     __tablename__ = "task"
     __table_args__ = (UniqueConstraint("project_id", "key"),)
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     project_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     key: str = Field(sa_column=Column(Text, nullable=False))  # T-<number>
     title: Optional[str] = None
     description: Optional[str] = None
-    acceptance_criteria: Any = Field(default=[], sa_column=Column(JSONB, server_default="'[]'"))
+    acceptance_criteria: Any = Field(default=[], sa_column=Column(JSONB_COMPAT, server_default="'[]'"))
     effort: Optional[int] = None
     status: str = Field(default="todo")
     is_milestone: bool = Field(default=False)
@@ -120,13 +122,13 @@ class Message(SQLModel, table=True):
     __tablename__ = "message"
     __table_args__ = (UniqueConstraint("chat_id", "tg_message_id"),)
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     project_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     member_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     task_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     direction: str = Field(sa_column=Column(Text, nullable=False))  # out | in
     text: Optional[str] = None
-    parsed_json: Any = Field(default=None, sa_column=Column(JSONB))
+    parsed_json: Any = Field(default=None, sa_column=Column(JSONB_COMPAT))
     created_at: Optional[datetime] = Field(default=None)
     source: str = Field(default="dm")   # dm | group
     chat_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
@@ -141,7 +143,7 @@ class Message(SQLModel, table=True):
 class Blocker(SQLModel, table=True):
     __tablename__ = "blocker"
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     task_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     description: Optional[str] = None
     type: Optional[str] = None
@@ -158,10 +160,10 @@ class Blocker(SQLModel, table=True):
 class Contradiction(SQLModel, table=True):
     __tablename__ = "contradiction"
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     project_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
-    task_ids: Any = Field(default=None, sa_column=Column(JSONB))
-    member_ids: Any = Field(default=None, sa_column=Column(JSONB))
+    task_ids: Any = Field(default=None, sa_column=Column(JSONB_COMPAT))
+    member_ids: Any = Field(default=None, sa_column=Column(JSONB_COMPAT))
     summary: Optional[str] = None
     status: str = Field(default="open")
     created_at: Optional[datetime] = None
@@ -175,12 +177,12 @@ class Contradiction(SQLModel, table=True):
 class Verification(SQLModel, table=True):
     __tablename__ = "verification"
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     task_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     verdict: Optional[str] = None
     confidence: Optional[float] = None
-    matched_shas: Any = Field(default=None, sa_column=Column(JSONB))
-    criteria_results: Any = Field(default=None, sa_column=Column(JSONB))
+    matched_shas: Any = Field(default=None, sa_column=Column(JSONB_COMPAT))
+    criteria_results: Any = Field(default=None, sa_column=Column(JSONB_COMPAT))
     reason: Optional[str] = None
     created_at: Optional[datetime] = None
 
@@ -196,7 +198,7 @@ class CommitLog(SQLModel, table=True):
     author_login: Optional[str] = None
     member_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     message: Optional[str] = None
-    files: Any = Field(default=None, sa_column=Column(JSONB))
+    files: Any = Field(default=None, sa_column=Column(JSONB_COMPAT))
     additions: Optional[int] = None
     deletions: Optional[int] = None
     committed_at: Optional[datetime] = None
@@ -209,10 +211,10 @@ class CommitLog(SQLModel, table=True):
 class Event(SQLModel, table=True):
     __tablename__ = "event"
 
-    id: Optional[int] = Field(default=None, sa_column=Column(BigInteger, primary_key=True, autoincrement=True))
+    id: Optional[int] = Field(default=None, primary_key=True)
     project_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     ts: Optional[datetime] = None
     actor_member_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
     type: str = Field(sa_column=Column(Text, nullable=False))
     task_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger))
-    payload: Any = Field(default=None, sa_column=Column(JSONB))
+    payload: Any = Field(default=None, sa_column=Column(JSONB_COMPAT))

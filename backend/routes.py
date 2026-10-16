@@ -489,6 +489,54 @@ def kickoff_project(code: str):
         return {"status": "ok", "detail": "Project kicked off"}
 
 
+@router.post("/projects/{code}/verify")
+def trigger_verify(code: str):
+    """Trigger AST commit verification for project."""
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        ev = Event(
+            project_id=project.id,
+            ts=datetime.now(timezone.utc),
+            type="status_changed",
+            payload={"reason": "Manual AST verification triggered"},
+        )
+        session.add(ev)
+        session.commit()
+        return {"status": "ok", "detail": "Verification executed"}
+
+
+@router.post("/projects/{code}/reset")
+def reset_project(code: str):
+    """Reset project tasks to initial demo state."""
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        tasks = session.exec(select(Task).where(Task.project_id == project.id)).all()
+        for t in tasks:
+            if t.key == "T-2":
+                t.status = "in_progress"
+                t.progress = 30
+            else:
+                t.status = "todo"
+                t.progress = 0
+            session.add(t)
+
+        ev = Event(
+            project_id=project.id,
+            ts=datetime.now(timezone.utc),
+            type="status_changed",
+            payload={"reason": "Demo project state reset"},
+        )
+        session.add(ev)
+        session.commit()
+        return {"status": "ok", "detail": "Project reset"}
+
+
 # ── Guide Q&A Chat ─────────────────────────────────────────────────────────
 
 class AskBody(BaseModel):

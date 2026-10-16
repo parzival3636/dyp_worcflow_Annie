@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SEEDED_SNAPSHOT } from '../mock/snapshot';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 const POLL_INTERVAL = 2000;
 
 /* ===== Owner color from palette (Jira Accessible) ===== */

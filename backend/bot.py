@@ -1107,54 +1107,61 @@ async def start_bot():
     global _bot_app
     settings = get_settings()
 
-    _bot_app = (
-        Application.builder()
-        .token(settings.telegram_bot_token)
-        .build()
-    )
+    if not settings.telegram_bot_token or "dummy" in settings.telegram_bot_token.lower() or "your_" in settings.telegram_bot_token.lower():
+        logger.warning("Telegram bot token not configured. Telegram bot polling skipped.")
+        return
 
-    # Register handlers (order matters: commands first, then text)
-    _bot_app.add_handler(CommandHandler("start", cmd_start))
-    _bot_app.add_handler(CommandHandler("help", cmd_help))
-    _bot_app.add_handler(CommandHandler("newproject", cmd_newproject))
-    _bot_app.add_handler(CommandHandler("plan", cmd_plan))
-    _bot_app.add_handler(CommandHandler("kickoff", cmd_kickoff))
-    _bot_app.add_handler(CommandHandler("mytasks", cmd_mytasks))
-    _bot_app.add_handler(CommandHandler("status", cmd_status))
-    _bot_app.add_handler(CommandHandler("ask", cmd_ask))
-    _bot_app.add_handler(CommandHandler("report", cmd_report))
-    _bot_app.add_handler(CommandHandler("followup", cmd_followup))
-    _bot_app.add_handler(CommandHandler("linkgroup", cmd_linkgroup))
-    _bot_app.add_handler(CommandHandler("join", cmd_join))
+    try:
+        _bot_app = (
+            Application.builder()
+            .token(settings.telegram_bot_token)
+            .build()
+        )
 
-    _bot_app.add_handler(CallbackQueryHandler(callback_handler))
+        # Register handlers (order matters: commands first, then text)
+        _bot_app.add_handler(CommandHandler("start", cmd_start))
+        _bot_app.add_handler(CommandHandler("help", cmd_help))
+        _bot_app.add_handler(CommandHandler("newproject", cmd_newproject))
+        _bot_app.add_handler(CommandHandler("plan", cmd_plan))
+        _bot_app.add_handler(CommandHandler("kickoff", cmd_kickoff))
+        _bot_app.add_handler(CommandHandler("mytasks", cmd_mytasks))
+        _bot_app.add_handler(CommandHandler("status", cmd_status))
+        _bot_app.add_handler(CommandHandler("ask", cmd_ask))
+        _bot_app.add_handler(CommandHandler("report", cmd_report))
+        _bot_app.add_handler(CommandHandler("followup", cmd_followup))
+        _bot_app.add_handler(CommandHandler("linkgroup", cmd_linkgroup))
+        _bot_app.add_handler(CommandHandler("join", cmd_join))
 
-    # Group text (before DM text so groups are matched first)
-    _bot_app.add_handler(MessageHandler(
-        filters.TEXT & filters.ChatType.GROUPS & ~filters.COMMAND,
-        group_text_handler,
-    ))
-    _bot_app.add_handler(MessageHandler(
-        filters.UpdateType.EDITED_MESSAGE & filters.ChatType.GROUPS,
-        group_edited_handler,
-    ))
+        _bot_app.add_handler(CallbackQueryHandler(callback_handler))
 
-    # DM text (last — catches remaining private text)
-    _bot_app.add_handler(MessageHandler(
-        filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
-        dm_text_handler,
-    ))
+        # Group text (before DM text so groups are matched first)
+        _bot_app.add_handler(MessageHandler(
+            filters.TEXT & filters.ChatType.GROUPS & ~filters.COMMAND,
+            group_text_handler,
+        ))
+        _bot_app.add_handler(MessageHandler(
+            filters.UpdateType.EDITED_MESSAGE & filters.ChatType.GROUPS,
+            group_edited_handler,
+        ))
 
-    # Migration handler
-    _bot_app.add_handler(MessageHandler(
-        filters.StatusUpdate.MIGRATE,
-        migrate_handler,
-    ))
+        # DM text (last — catches remaining private text)
+        _bot_app.add_handler(MessageHandler(
+            filters.TEXT & filters.ChatType.PRIVATE & ~filters.COMMAND,
+            dm_text_handler,
+        ))
 
-    logger.info("Starting Telegram bot (long polling)…")
-    await _bot_app.initialize()
-    await _bot_app.start()
-    await _bot_app.updater.start_polling(drop_pending_updates=True)
+        # Migration handler
+        _bot_app.add_handler(MessageHandler(
+            filters.StatusUpdate.MIGRATE,
+            migrate_handler,
+        ))
+
+        logger.info("Starting Telegram bot (long polling)…")
+        await _bot_app.initialize()
+        await _bot_app.start()
+        await _bot_app.updater.start_polling(drop_pending_updates=True)
+    except Exception as exc:
+        logger.error("Failed to start Telegram bot: %s", exc)
 
 
 async def stop_bot():

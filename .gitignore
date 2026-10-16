@@ -9,3 +9,5 @@ build/
 docs/demo-evidence/
 .vscode/
 .idea/
+*.db
+*.sqlite

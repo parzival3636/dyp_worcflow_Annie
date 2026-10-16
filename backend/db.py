@@ -20,12 +20,20 @@ def get_engine():
     global _engine
     if _engine is None:
         settings = get_settings()
-        _engine = create_engine(
-            settings.database_url,
-            pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=5,
-        )
+        if settings.database_url.startswith("sqlite"):
+            _engine = create_engine(
+                settings.database_url,
+                connect_args={"check_same_thread": False},
+            )
+        else:
+            _engine = create_engine(
+                settings.database_url,
+                pool_pre_ping=True,
+                pool_size=5,
+                max_overflow=5,
+            )
+        from models import SQLModel
+        SQLModel.metadata.create_all(_engine)
     return _engine
 
 
