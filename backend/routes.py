@@ -822,6 +822,71 @@ def override_verify(code: str, key: str):
         return {"status": "ok"}
 
 
+@router.post("/projects/{code}/tasks/{key}/verify")
+async def verify_task_endpoint(code: str, key: str):
+    """Trigger real GitHub verification for task key."""
+    from verify import verify_task
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        task = session.exec(
+            select(Task).where(Task.project_id == project.id, Task.key == key)
+        ).first()
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        task_id = task.id
+
+    result = await verify_task(task_id)
+    return {"status": "ok", "task_key": key, **result}
+
+
+@router.get("/projects/{code}/messages")
+def list_project_messages(code: str, limit: int = 50):
+    """Retrieve recent Telegram and system messages for the project feed."""
+    from models import Message
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        members = session.exec(select(Member).where(Member.project_id == project.id)).all()
+        member_map = {m.id: m.name for m in members}
+
+        chat_id = project.telegram_chat_id or project.telegram_group_id
+
+        # Query messages by project_id or chat_id
+        conditions = [Message.project_id == project.id]
+        if chat_id:
+            conditions.append(Message.chat_id == chat_id)
+
+        from sqlmodel import or_
+        msgs = session.exec(
+            select(Message)
+            .where(or_(*conditions))
+            .order_by(Message.id.desc())
+            .limit(limit)
+        ).all()
+
+        msgs_sorted = list(reversed(msgs))
+        return [
+            {
+                "id": m.id,
+                "direction": m.direction,
+                "sender": member_map.get(m.member_id, "Pilot Bot" if m.direction == "out" else "Team Member"),
+                "member_id": m.member_id,
+                "text": m.text,
+                "intent": m.intent,
+                "source": m.source,
+                "tg_message_id": m.tg_message_id,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            }
+            for m in msgs_sorted
+        ]
+
+
 # ── Project Lifecycle Operations ───────────────────────────────────────────
 
 class PlanRequestBody(BaseModel):

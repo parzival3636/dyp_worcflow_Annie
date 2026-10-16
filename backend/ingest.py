@@ -118,7 +118,9 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
     def _lookup():
         with get_session() as session:
             project = session.exec(
-                select(Project).where(Project.telegram_group_id == chat_id)
+                select(Project).where(
+                    (Project.telegram_chat_id == chat_id) | (Project.telegram_group_id == chat_id)
+                )
             ).first()
             if not project:
                 return None, None, []

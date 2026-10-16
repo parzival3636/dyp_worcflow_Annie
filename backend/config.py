@@ -6,15 +6,20 @@ from __future__ import annotations
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+from pathlib import Path
+
+_BACKEND_DIR = Path(__file__).resolve().parent
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(str(_BACKEND_DIR / ".env"), ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
     # Telegram
     telegram_bot_token: str
+    bot_username: str = ""           # e.g. "pilot_coordinator_bot" (without @)
 
     # LLM
     llm_base_url: str
@@ -22,22 +27,43 @@ class Settings(BaseSettings):
     llm_model: str
     llm_fallback_model: str = ""
 
-    # Database (Supabase Postgres via Session pooler or Direct)
+    # Database (Supabase Postgres – session pooler port 5432 or direct)
     database_url: str
+    database_url_test: str = ""     # local docker Postgres for tests
+
+    # SMTP (optional – if unset, invite links are logged to console only)
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+
+    # Auth & Security
+    secret_key: str = "CHANGE_ME_IN_PRODUCTION_USE_A_LONG_RANDOM_STRING"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60 * 24 * 7   # 7 days
+    frontend_url: str = "http://localhost:5173"
+
+    # GitHub
+    github_token: str = ""
+    github_webhook_secret: str = ""
+    github_owner: str = ""          # GitHub org/user that owns created repos
+    github_username: str = ""       # legacy alias kept for compatibility
+    github_poll_seconds: int = 45
+
+    # Verification
+    verify_confidence_min: float = 0.7   # threshold for verified_done
+    verify_mode: str = "soft"            # soft | strict (legacy)
 
     # Scheduler / behaviour
     checkin_hours: int = 4
     demo_mode: bool = False
-    verify_mode: str = "soft"          # soft | strict
     quiet_hours_start: int = 22
     quiet_hours_end: int = 8
     group_debounce_seconds: int = 12
     group_max_buffer: int = 6
 
-    # Annie – GitHub / Supabase / Gemini Verification Pipeline
-    github_token: str = ""
-    github_webhook_secret: str = ""
-    github_username: str = ""
+    # Annie legacy compatibility (kept to avoid import errors from existing modules)
     supabase_url: str = ""
     supabase_anon_key: str = ""
     supabase_service_key: str = ""
@@ -45,16 +71,14 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-flash-lite-latest"
     completion_threshold: int = 85
 
-    # Auth & Security
-    jwt_secret_key: str = "pilot_super_secret_jwt_key_2026_dev_prod"
-    jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 60 * 24 * 7
-    frontend_url: str = "http://localhost:5173"
-
-    # Uppercase aliases for compatibility across modules
+    # Uppercase property aliases for compatibility across modules
     @property
     def TELEGRAM_BOT_TOKEN(self) -> str:
         return self.telegram_bot_token
+
+    @property
+    def BOT_USERNAME(self) -> str:
+        return self.bot_username
 
     @property
     def LLM_BASE_URL(self) -> str:
@@ -94,7 +118,20 @@ class Settings(BaseSettings):
 
     @property
     def FRONTEND_ORIGIN(self) -> str:
-        return "http://localhost:5173"
+        return self.frontend_url
+
+    @property
+    def jwt_secret_key(self) -> str:
+        """Alias kept for compatibility with existing auth.py code."""
+        return self.secret_key
+
+    @property
+    def GITHUB_OWNER(self) -> str:
+        return self.github_owner or self.github_username
+
+    @property
+    def VERIFY_CONFIDENCE_MIN(self) -> float:
+        return self.verify_confidence_min
 
 
 _settings: Settings | None = None
