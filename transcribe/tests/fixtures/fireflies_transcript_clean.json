@@ -1,0 +1,42 @@
+{
+  "id": "clean_123",
+  "title": "Weekly Engineering Sync",
+  "date": "2026-03-10T10:00:00Z",
+  "duration": 1800,
+  "participants": ["Rahul Sharma", "Priya Patel", "Anita Rao"],
+  "speakers": [
+    {"id": "1", "name": "Rahul Sharma"},
+    {"id": "2", "name": "Priya Patel"},
+    {"id": "3", "name": "Anita Rao"}
+  ],
+  "sentences": [
+    {
+      "index": 0,
+      "speaker_name": "Rahul Sharma",
+      "text": "Hey everyone, let's discuss our deliverables.",
+      "start_time": 0.0,
+      "end_time": 3.0
+    },
+    {
+      "index": 1,
+      "speaker_name": "Priya Patel",
+      "text": "I will finish the login page by Friday.",
+      "start_time": 4.0,
+      "end_time": 8.0
+    },
+    {
+      "index": 2,
+      "speaker_name": "Anita Rao",
+      "text": "I can prepare slides by tomorrow.",
+      "start_time": 9.0,
+      "end_time": 12.0
+    },
+    {
+      "index": 3,
+      "speaker_name": "Rahul Sharma",
+      "text": "Awesome. I'll configure the database schema by end of the month.",
+      "start_time": 13.0,
+      "end_time": 18.0
+    }
+  ]
+}

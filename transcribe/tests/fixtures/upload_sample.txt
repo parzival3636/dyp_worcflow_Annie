@@ -1,0 +1,4 @@
+Rahul: Hey team let us organize sprint.
+Priya: I will finish the login page by Friday.
+Anita: I can prepare slides by tomorrow.
+Rahul: I will set up the database schema by end of the month.

@@ -1,0 +1,8 @@
+Meeting title: {title}
+Meeting date: {meeting_date}
+Known project members and aliases:
+{members}
+
+<transcript>
+{transcript_chunk}
+</transcript>

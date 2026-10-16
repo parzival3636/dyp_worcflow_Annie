@@ -1,0 +1,35 @@
+{
+  "items": [
+    {
+      "type": "task",
+      "title": "Finish the login page",
+      "description": "Complete UI and validation for login",
+      "owner_raw": "Priya",
+      "deadline_raw": "by Friday",
+      "confidence": 0.95,
+      "evidence": "I will finish the login page by Friday.",
+      "ambiguity_flags": []
+    },
+    {
+      "type": "task",
+      "title": "Prepare slides",
+      "description": "Slides for client demo",
+      "owner_raw": "Anita",
+      "deadline_raw": "by tomorrow",
+      "confidence": 0.92,
+      "evidence": "I can prepare slides by tomorrow.",
+      "ambiguity_flags": []
+    },
+    {
+      "type": "task",
+      "title": "Configure database schema",
+      "description": "SQL tables and migrations",
+      "owner_raw": "Rahul",
+      "deadline_raw": "by end of the month",
+      "confidence": 0.90,
+      "evidence": "I'll configure the database schema by end of the month.",
+      "ambiguity_flags": []
+    }
+  ],
+  "meeting_summary": "Sprint planning meeting where Priya committed to login page, Anita to slides, and Rahul to database schema."
+}
