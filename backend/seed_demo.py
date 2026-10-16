@@ -196,11 +196,11 @@ def seed():
         )
         session.add(event)
 
-        print(f"✅ Demo project seeded:")
+        print(f"[OK] Demo project seeded:")
         print(f"   Project: {project.name} (code: {project.code})")
         print(f"   Members: Kabir (lead), Meera, Arjun, Priya")
         print(f"   Tasks: T-1 (Kabir), T-2 (Meera), T-3 (Arjun), T-4 (Priya)")
-        print(f"\n⚠️  Set real Telegram IDs in the member rows for live testing!")
+        print(f"\n[!] Set real Telegram IDs in the member rows for live testing!")
         print(f"   Kabir id: {kabir.id}, Meera id: {meera.id}, Arjun id: {arjun.id}, Priya id: {priya.id}")
 
         return project.id
