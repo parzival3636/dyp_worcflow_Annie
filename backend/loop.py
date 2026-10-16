@@ -887,6 +887,21 @@ def start_scheduler():
         id="checkin_tick",
         max_instances=1,
     )
+
+    try:
+        from verify import run_github_poll_tick
+        poll_sec = getattr(settings, "github_poll_seconds", 45) or 45
+        _scheduler.add_job(
+            run_github_poll_tick,
+            "interval",
+            seconds=poll_sec,
+            id="github_poll",
+            max_instances=1,
+        )
+        logger.info("GitHub commit polling job scheduled every %ds", poll_sec)
+    except Exception as exc:
+        logger.warning("Could not schedule GitHub poll job: %s", exc)
+
     _scheduler.start()
     logger.info("Scheduler started (interval=%ds, demo=%s)", interval, settings.demo_mode)
 

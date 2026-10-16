@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { apiPost, getMemberName, getOwnerColor, relativeTime } from '../hooks/useSnapshot';
+import { apiGet, apiPost, getMemberName, getOwnerColor, relativeTime } from '../hooks/useSnapshot';
 import { useToast } from '../components/ToastProvider';
 import TaskDrawer from '../components/TaskDrawer';
 import {
   Sparkles, Send, Bot, User, AlertTriangle, ShieldCheck,
-  HelpCircle, ArrowRight, CornerDownLeft, Loader2
+  HelpCircle, ArrowRight, CornerDownLeft, Loader2, MessageSquare,
+  Radio, CheckCircle2, Clock
 } from 'lucide-react';
 import './GuideChat.css';
 
@@ -20,10 +21,28 @@ export default function GuideChat() {
   const { snapshot, code } = useOutletContext();
   const { addToast } = useToast();
 
+  const [activeTab, setActiveTab] = useState('telegram'); // 'telegram' | 'guide'
+  const [telegramMessages, setTelegramMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedTaskKey, setSelectedTaskKey] = useState(null);
   const messagesEndRef = useRef(null);
+  const tgEndRef = useRef(null);
+
+  const fetchTgMessages = useCallback(async () => {
+    try {
+      const data = await apiGet(`/projects/${code}/messages`);
+      setTelegramMessages(data || []);
+    } catch {
+      // ignore
+    }
+  }, [code]);
+
+  useEffect(() => {
+    fetchTgMessages();
+    const timer = setInterval(fetchTgMessages, 2500);
+    return () => clearInterval(timer);
+  }, [fetchTgMessages]);
 
   // Chat message history
   const [messages, setMessages] = useState([
@@ -134,100 +153,211 @@ export default function GuideChat() {
           <div className="chat-header">
             <div className="chat-header-info">
               <div className="guide-avatar-wrap">
-                <Sparkles size={20} className="text-purple" />
+                {activeTab === 'telegram' ? (
+                  <MessageSquare size={20} style={{ color: '#3b82f6' }} />
+                ) : (
+                  <Sparkles size={20} className="text-purple" />
+                )}
               </div>
               <div>
-                <h1 className="chat-title">Guide Agent Chat</h1>
-                <p className="chat-subtitle">Proactive coordination agent &amp; project health advisor</p>
+                <h1 className="chat-title">
+                  {activeTab === 'telegram' ? 'Telegram Group Feed' : 'Guide Agent Chat'}
+                </h1>
+                <p className="chat-subtitle">
+                  {activeTab === 'telegram'
+                    ? `Live monitoring linked Telegram group (${snapshot?.project?.telegram_status === 'connected' ? 'Connected' : 'Waiting for /link'})`
+                    : 'Proactive coordination agent & project health advisor'}
+                </p>
               </div>
             </div>
 
-            <div className="chat-header-badge">
-              <span className="live-pulse" />
-              <span>AI Polling Active</span>
-            </div>
-          </div>
-
-          {/* Quick prompt chips */}
-          <div className="quick-prompts-bar">
-            {QUICK_PROMPTS.map((prompt, idx) => (
+            {/* Segmented Tab Switcher */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(15, 23, 42, 0.6)', padding: 4, borderRadius: 10, border: '1px solid rgba(51, 65, 85, 0.5)' }}>
               <button
-                key={idx}
-                className="quick-prompt-btn"
-                onClick={() => handleSend(prompt)}
-                disabled={loading}
+                className={`btn btn-sm ${activeTab === 'telegram' ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ fontSize: 11, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 6 }}
+                onClick={() => setActiveTab('telegram')}
               >
-                <span>{prompt}</span>
+                <Radio size={12} style={{ color: snapshot?.project?.telegram_status === 'connected' ? '#10b981' : '#f59e0b' }} />
+                <span>Telegram Live Feed</span>
+                <span className="tab-count-badge" style={{ fontSize: 9 }}>{telegramMessages.length}</span>
               </button>
-            ))}
-          </div>
-
-          {/* Message Stream */}
-          <div className="chat-messages">
-            {messages.map(msg => (
-              <div
-                key={msg.id}
-                className={`chat-bubble-wrap ${msg.sender === 'user' ? 'user-wrap' : 'bot-wrap'}`}
+              <button
+                className={`btn btn-sm ${activeTab === 'guide' ? 'btn-primary' : 'btn-ghost'}`}
+                style={{ fontSize: 11, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 6 }}
+                onClick={() => setActiveTab('guide')}
               >
-                {msg.sender === 'bot' && (
-                  <div className="sender-avatar bot">
-                    <Sparkles size={16} />
-                  </div>
-                )}
-
-                <div className={`chat-bubble ${msg.sender}`}>
-                  <div className="bubble-text">{formatText(msg.text)}</div>
-                  <div className="bubble-meta">
-                    <span className="bubble-time">{relativeTime(msg.ts)}</span>
-                  </div>
-                </div>
-
-                {msg.sender === 'user' && (
-                  <div className="sender-avatar user">
-                    <User size={16} />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {loading && (
-              <div className="chat-bubble-wrap bot-wrap">
-                <div className="sender-avatar bot">
-                  <Sparkles size={16} />
-                </div>
-                <div className="chat-bubble bot thinking">
-                  <Loader2 size={16} className="animate-pulse text-purple" />
-                  <span>Guide is analyzing snapshot &amp; repository...</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
+                <Sparkles size={12} />
+                <span>Guide AI Chat</span>
+              </button>
+            </div>
           </div>
 
-          {/* Input Box */}
-          <form
-            className="chat-input-container"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
-          >
-            <input
-              type="text"
-              className="chat-input"
-              placeholder="Ask Guide anything about the project, blockers, commits, or risks..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={loading}
-            />
-            <button
-              type="submit"
-              className="btn btn-primary chat-send-btn"
-              disabled={!input.trim() || loading}
-            >
-              <Send size={15} />
-            </button>
-          </form>
+          {activeTab === 'telegram' ? (
+            /* Telegram Group Live Feed View */
+            <div className="chat-messages" style={{ flex: 1, overflowY: 'auto' }}>
+              {telegramMessages.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                  <MessageSquare size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
+                    No Telegram Messages Recorded Yet
+                  </h3>
+                  <p style={{ fontSize: 12, maxWidth: 420, margin: '0 auto', lineHeight: 1.5 }}>
+                    To connect your group, add your bot to your team Telegram group and type:
+                  </p>
+                  <code style={{ display: 'inline-block', margin: '10px 0', padding: '6px 14px', background: 'rgba(0,0,0,0.3)', borderRadius: 6, color: '#38bdf8', fontSize: 13, border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                    /link {code}
+                  </code>
+                  <p style={{ fontSize: 11, opacity: 0.7 }}>
+                    Every message, check-in, blocker, and completion claim sent in that group will appear here live in real-time.
+                  </p>
+                </div>
+              ) : (
+                telegramMessages.map(msg => {
+                  const isBot = msg.direction === 'out';
+                  const ownerColor = getOwnerColor(msg.member_id);
+
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`chat-bubble-wrap ${isBot ? 'bot-wrap' : 'user-wrap'}`}
+                    >
+                      <div
+                        className="sender-avatar"
+                        style={{
+                          background: isBot ? 'var(--accent)' : ownerColor,
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: 10
+                        }}
+                      >
+                        {isBot ? '🤖' : (msg.sender?.[0] || 'U')}
+                      </div>
+
+                      <div className={`chat-bubble ${isBot ? 'bot' : 'user'}`} style={{ maxWidth: '85%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: isBot ? 'var(--accent)' : ownerColor }}>
+                            {msg.sender}
+                          </span>
+                          {msg.intent && (
+                            <span
+                              className="pill"
+                              style={{
+                                fontSize: 9,
+                                padding: '1px 6px',
+                                textTransform: 'uppercase',
+                                background: msg.intent === 'blocker' ? 'rgba(239, 68, 68, 0.2)' : msg.intent === 'completion_claim' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                color: msg.intent === 'blocker' ? '#ef4444' : msg.intent === 'completion_claim' ? '#10b981' : '#60a5fa'
+                              }}
+                            >
+                              {msg.intent.replace('_', ' ')}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="bubble-text" style={{ fontSize: 13, whiteSpace: 'pre-wrap' }}>
+                          {formatText(msg.text || '')}
+                        </div>
+
+                        <div className="bubble-meta" style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span className="bubble-time">{relativeTime(msg.created_at)}</span>
+                          <span style={{ fontSize: 9, opacity: 0.5 }}>• {isBot ? 'Bot Outbound' : 'Group Inbound'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={tgEndRef} />
+            </div>
+          ) : (
+            /* Guide AI Chat View */
+            <>
+              {/* Quick prompt chips */}
+              <div className="quick-prompts-bar">
+                {QUICK_PROMPTS.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    className="quick-prompt-btn"
+                    onClick={() => handleSend(prompt)}
+                    disabled={loading}
+                  >
+                    <span>{prompt}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Message Stream */}
+              <div className="chat-messages">
+                {messages.map(msg => (
+                  <div
+                    key={msg.id}
+                    className={`chat-bubble-wrap ${msg.sender === 'user' ? 'user-wrap' : 'bot-wrap'}`}
+                  >
+                    {msg.sender === 'bot' && (
+                      <div className="sender-avatar bot">
+                        <Sparkles size={16} />
+                      </div>
+                    )}
+
+                    <div className={`chat-bubble ${msg.sender}`}>
+                      <div className="bubble-text">{formatText(msg.text)}</div>
+                      <div className="bubble-meta">
+                        <span className="bubble-time">{relativeTime(msg.ts)}</span>
+                      </div>
+                    </div>
+
+                    {msg.sender === 'user' && (
+                      <div className="sender-avatar user">
+                        <User size={16} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {loading && (
+                  <div className="chat-bubble-wrap bot-wrap">
+                    <div className="sender-avatar bot">
+                      <Sparkles size={16} />
+                    </div>
+                    <div className="chat-bubble bot thinking">
+                      <Loader2 size={16} className="animate-pulse text-purple" />
+                      <span>Guide is analyzing snapshot &amp; repository...</span>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Box */}
+              <form
+                className="chat-input-container"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSend();
+                }}
+              >
+                <input
+                  type="text"
+                  className="chat-input"
+                  placeholder="Ask Guide anything about the project, blockers, commits, or risks..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={loading}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary chat-send-btn"
+                  disabled={!input.trim() || loading}
+                >
+                  <Send size={15} />
+                </button>
+              </form>
+            </>
+          )}
         </div>
 
         {/* Sidebar: Proactive Insights & Contradictions */}

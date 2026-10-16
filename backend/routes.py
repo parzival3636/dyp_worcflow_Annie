@@ -17,14 +17,20 @@ Implements all endpoints from PRD Section 13:
 - GET /api/projects/{code}/events
 - GET /api/projects/{code}/contributions
 """
+import logging
 import secrets
+import smtplib
 from datetime import datetime, timezone, timedelta
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, EmailStr
 from sqlmodel import select
+
+logger = logging.getLogger("pilot.routes")
 
 from auth import get_current_user, get_current_user_optional
 from config import get_settings
@@ -52,6 +58,7 @@ class ProjectCreateRequest(BaseModel):
 
 class InviteCreateRequest(BaseModel):
     email: EmailStr
+    name: Optional[str] = None
     role: str = "member"
 
 
@@ -164,6 +171,18 @@ def create_project(
             },
         )
         session.add(event)
+        session.flush()
+
+        # Automatically generate initial engineering tasks for the project
+        try:
+            from planner import generate_plan
+            generate_plan(
+                session=session,
+                project_id=project.id,
+                idea=project.idea or project.description or project.name,
+            )
+        except Exception as exc:
+            logger.warning("Initial plan generation on project creation deferred: %s", exc)
 
         return {
             "id": project.id,
@@ -322,22 +341,75 @@ def create_project_invite(
             )
         ).first()
 
+        member_name = payload.name or payload.email.split("@")[0]
         if not existing_member:
             member = Member(
                 project_id=project.id,
-                name=payload.email.split("@")[0],
+                name=member_name,
                 email=payload.email.lower().strip(),
                 role=invite.role,
                 invite_status="pending",
                 onboarding_state="new",
             )
             session.add(member)
+        else:
+            # Update name if provided
+            if payload.name:
+                existing_member.name = payload.name
+                session.add(existing_member)
+
+        # Send invite email if SMTP is configured
+        settings = get_settings()
+        invite_url = f"{settings.frontend_url}/invite/{token}"
+        email_sent = False
+        if settings.smtp_host and settings.smtp_user:
+            try:
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = f"You've been invited to join '{project.name}' on Pilot"
+                msg["From"] = settings.smtp_from or settings.smtp_user
+                msg["To"] = payload.email
+
+                text_body = (
+                    f"Hi {member_name},\n\n"
+                    f"You've been invited to join the project '{project.name}' on Pilot as a {invite.role}.\n\n"
+                    f"Click the link below to accept and get access:\n{invite_url}\n\n"
+                    f"This link expires in 7 days.\n\nThe Pilot Team"
+                )
+                html_body = f"""
+                <html><body style="font-family:sans-serif;background:#0A0B0D;color:#E8E6E1;padding:32px">
+                  <div style="max-width:520px;margin:0 auto;background:#111316;border:1px solid #23272D;border-radius:12px;padding:32px">
+                    <h2 style="color:#FF6B3D;margin-top:0">You're invited to Pilot 🚀</h2>
+                    <p>Hi <strong>{member_name}</strong>,</p>
+                    <p>You've been invited to join the project <strong>{project.name}</strong> as a <strong>{invite.role}</strong>.</p>
+                    <p>Click the button below to accept the invite and gain access to the project board:</p>
+                    <a href="{invite_url}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#FF6B3D;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Accept Invite</a>
+                    <p style="color:#8A8F98;font-size:12px">Or copy this link: {invite_url}</p>
+                    <p style="color:#8A8F98;font-size:12px">This link expires in 7 days.</p>
+                  </div>
+                </body></html>
+                """
+                msg.attach(MIMEText(text_body, "plain"))
+                msg.attach(MIMEText(html_body, "html"))
+
+                with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:
+                    smtp.ehlo()
+                    smtp.starttls()
+                    smtp.login(settings.smtp_user, settings.smtp_password)
+                    smtp.sendmail(msg["From"], [payload.email], msg.as_string())
+                email_sent = True
+                logger.info("Invite email sent to %s for project %s", payload.email, project.code)
+            except Exception as exc:
+                logger.warning("Failed to send invite email to %s: %s", payload.email, exc)
+        else:
+            logger.info("SMTP not configured – invite link: %s", invite_url)
 
         return {
             "token": token,
             "email": invite.email,
+            "name": member_name,
             "role": invite.role,
             "invite_url": f"/invite/{token}",
+            "email_sent": email_sent,
         }
 
 
@@ -820,6 +892,71 @@ def override_verify(code: str, key: str):
             pass
 
         return {"status": "ok"}
+
+
+@router.post("/projects/{code}/tasks/{key}/verify")
+async def verify_task_endpoint(code: str, key: str):
+    """Trigger real GitHub verification for task key."""
+    from verify import verify_task
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        task = session.exec(
+            select(Task).where(Task.project_id == project.id, Task.key == key)
+        ).first()
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        task_id = task.id
+
+    result = await verify_task(task_id)
+    return {"status": "ok", "task_key": key, **result}
+
+
+@router.get("/projects/{code}/messages")
+def list_project_messages(code: str, limit: int = 50):
+    """Retrieve recent Telegram and system messages for the project feed."""
+    from models import Message
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        members = session.exec(select(Member).where(Member.project_id == project.id)).all()
+        member_map = {m.id: m.name for m in members}
+
+        chat_id = project.telegram_chat_id or project.telegram_group_id
+
+        # Query messages by project_id or chat_id
+        conditions = [Message.project_id == project.id]
+        if chat_id:
+            conditions.append(Message.chat_id == chat_id)
+
+        from sqlmodel import or_
+        msgs = session.exec(
+            select(Message)
+            .where(or_(*conditions))
+            .order_by(Message.id.desc())
+            .limit(limit)
+        ).all()
+
+        msgs_sorted = list(reversed(msgs))
+        return [
+            {
+                "id": m.id,
+                "direction": m.direction,
+                "sender": member_map.get(m.member_id, "Pilot Bot" if m.direction == "out" else "Team Member"),
+                "member_id": m.member_id,
+                "text": m.text,
+                "intent": m.intent,
+                "source": m.source,
+                "tg_message_id": m.tg_message_id,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            }
+            for m in msgs_sorted
+        ]
 
 
 # ── Project Lifecycle Operations ───────────────────────────────────────────

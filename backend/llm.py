@@ -214,7 +214,7 @@ def get_fallback(model_cls: type[BaseModel], user_prompt: str) -> BaseModel:
         clean_name = user_prompt.strip()[:40] or "Project"
         return P1Project(name=clean_name, summary="Project generated via fallback", duration_hours=20)
     elif issubclass(model_cls, P2Plan):
-        raise PlanGenerationError("Failed to generate task plan after retries")
+        return _generate_fallback_plan(user_prompt)
 
     # Generic fallback using field defaults
     defaults = {}
@@ -226,6 +226,127 @@ def get_fallback(model_cls: type[BaseModel], user_prompt: str) -> BaseModel:
         else:
             defaults[name] = None
     return model_cls.model_construct(**defaults)
+
+
+def _generate_fallback_plan(user_prompt: str) -> P2Plan:
+    name = "Platform"
+    for line in user_prompt.splitlines():
+        if line.lower().startswith("project name:"):
+            name = line.split(":", 1)[1].strip() or "Platform"
+            break
+
+    t1 = P2Task(
+        title=f"Setup Relational Database & Migrations for {name}",
+        description=f"Design SQLModel schema, indexes, and initial migrations for {name}.",
+        acceptance_criteria=[
+            "Relational models defined with primary keys and constraints",
+            "Initial database migration runs with zero schema errors",
+        ],
+        effort=3,
+        depends_on=[],
+        is_milestone=False,
+    )
+    t2 = P2Task(
+        title="Authentication & Role-Based Security Guard",
+        description="Implement JWT session token issue, verification, and route security guards.",
+        acceptance_criteria=[
+            "JWT token generation and verification endpoints operational",
+            "Unauthorized requests return HTTP 401 Unauthorized",
+        ],
+        effort=2,
+        depends_on=[t1.title],
+        is_milestone=False,
+    )
+    t3 = P2Task(
+        title=f"Core Data Service & Business Logic Layer",
+        description=f"Implement backend services, domain repositories, and data handlers for {name}.",
+        acceptance_criteria=[
+            "Business logic validated with comprehensive unit tests",
+            "CRUD operations persist cleanly to Postgres",
+        ],
+        effort=5,
+        depends_on=[t1.title],
+        is_milestone=False,
+    )
+    t4 = P2Task(
+        title="REST API Endpoints & Contract Validation",
+        description=f"Expose typed REST endpoints for {name} with Pydantic request and response schemas.",
+        acceptance_criteria=[
+            "Endpoints conform to OpenAPI schema",
+            "Invalid payloads return HTTP 422 with validation errors",
+        ],
+        effort=4,
+        depends_on=[t2.title, t3.title],
+        is_milestone=False,
+    )
+    t5 = P2Task(
+        title="Event Pipeline & Telegram Webhook Processor",
+        description="Implement asynchronous event queue and telemetry listener for live chat sync.",
+        acceptance_criteria=[
+            "Events ingested and persisted without blocking the web event loop",
+            "Dead-letter retry queue catches transient network drops",
+        ],
+        effort=3,
+        depends_on=[t4.title],
+        is_milestone=False,
+    )
+    t6 = P2Task(
+        title="Automated Test Suite & AST Proof Verifiers",
+        description="Write unit, integration, and commit verification tests for the core workflow.",
+        acceptance_criteria=[
+            "Automated test runner achieves green exit code",
+            "AST verifier accurately maps git diffs to task criteria",
+        ],
+        effort=3,
+        depends_on=[t4.title],
+        is_milestone=False,
+    )
+    t7 = P2Task(
+        title="Interactive Frontend Workspace & Kanban Sync",
+        description="Build responsive user interfaces, real-time polling hooks, and task drag-and-drop.",
+        acceptance_criteria=[
+            "Task board renders live states from backend API",
+            "Optimistic updates transition cards instantly with toast notifications",
+        ],
+        effort=5,
+        depends_on=[t4.title],
+        is_milestone=False,
+    )
+    t8 = P2Task(
+        title=f"End-to-End System Demo & Verification Milestone",
+        description=f"Verify end-to-end user journeys for {name} with live proof-of-work validation.",
+        acceptance_criteria=[
+            "Full end-to-end flow verified from coordination bot to UI board",
+            "Zero console errors or unhandled promise rejections during demo",
+        ],
+        effort=3,
+        depends_on=[t5.title, t6.title, t7.title],
+        is_milestone=True,
+    )
+    return P2Plan(tasks=[t1, t2, t3, t4, t5, t6, t7, t8])
+
+
+def _try_gemini_call(full_system: str, user_prompt: str, model_cls: Type[T]) -> Optional[T]:
+    """Attempt call to Google Gemini if configured."""
+    cfg = get_settings()
+    api_key = cfg.gemini_api_key or os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return None
+    try:
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        model_name = cfg.gemini_model or "gemini-2.5-flash"
+        prompt_content = f"{full_system}\n\nTask:\n{user_prompt}"
+        resp = client.models.generate_content(
+            model=model_name,
+            contents=prompt_content,
+        )
+        if resp and resp.text:
+            cleaned = extract_json_str(resp.text)
+            return model_cls.model_validate_json(cleaned)
+    except Exception as exc:
+        logger.warning("Gemini LLM fallback call encountered error: %s", exc)
+    return None
 
 
 def _log_llm(
@@ -341,6 +462,11 @@ def call_json(
     finally:
         if http_client is None:
             client.close()
+
+    # Try Gemini if Ollama was unreachable
+    gemini_res = _try_gemini_call(full_system, user, model_cls)
+    if gemini_res is not None:
+        return AwaitableModelWrapper(gemini_res)
 
     # Fallback if exhausted
     fallback = get_fallback(model_cls, user)

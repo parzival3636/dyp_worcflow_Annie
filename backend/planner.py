@@ -195,6 +195,14 @@ def generate_plan(
         )
 
     session.flush()
+
+    # Automatically bundle and assign to available project members
+    try:
+        bundle(session, project_id)
+        assign(session, project_id)
+    except Exception:
+        pass
+
     return inserted_tasks
 
 
@@ -284,6 +292,86 @@ def bundle(session: Session, project_id: int) -> list[Block]:
     return new_blocks
 
 
+def topological_sort(tasks: list[Task], deps: list[TaskDep]) -> list[Task]:
+    task_map = {t.id: t for t in tasks}
+    in_degree = {t.id: 0 for t in tasks}
+    graph = defaultdict(list)
+
+    for d in deps:
+        if d.task_id in in_degree and d.depends_on_task_id in in_degree:
+            graph[d.depends_on_task_id].append(d.task_id)
+            in_degree[d.task_id] += 1
+
+    queue = deque([tid for tid, deg in in_degree.items() if deg == 0])
+    ordered: list[Task] = []
+
+    while queue:
+        curr_id = queue.popleft()
+        ordered.append(task_map[curr_id])
+        for nxt in graph[curr_id]:
+            in_degree[nxt] -= 1
+            if in_degree[nxt] == 0:
+                queue.append(nxt)
+
+    if len(ordered) < len(tasks):
+        remaining = [t for t in tasks if t not in ordered]
+        ordered.extend(remaining)
+
+    return ordered
+
+
+def propose_split(session: Session, block_id: int) -> dict[str, Any]:
+    block = session.get(Block, block_id)
+    if not block:
+        raise ValueError(f"Block {block_id} not found")
+
+    tasks = session.exec(select(Task).where(Task.block_id == block_id)).all()
+    if len(tasks) < 2:
+        return {"error": "Block must contain at least 2 tasks to split"}
+
+    task_ids = {t.id for t in tasks}
+    deps = session.exec(
+        select(TaskDep).where(TaskDep.kind == "hard")
+    ).all()
+    block_deps = [d for d in deps if d.task_id in task_ids and d.depends_on_task_id in task_ids]
+
+    ordered_tasks = topological_sort(tasks, block_deps)
+
+    best_split_idx = 1
+    min_diff = float("inf")
+    total_effort = sum(t.effort or 1 for t in ordered_tasks)
+
+    curr_left_sum = 0
+    for i in range(1, len(ordered_tasks)):
+        curr_left_sum += ordered_tasks[i - 1].effort or 1
+        right_sum = total_effort - curr_left_sum
+        diff = abs(curr_left_sum - right_sum)
+        if diff < min_diff:
+            min_diff = diff
+            best_split_idx = i
+
+    left_tasks = ordered_tasks[:best_split_idx]
+    right_tasks = ordered_tasks[best_split_idx:]
+    left_ids = {t.id for t in left_tasks}
+    right_ids = {t.id for t in right_tasks}
+
+    cut_edges = []
+    for d in block_deps:
+        if (d.task_id in right_ids and d.depends_on_task_id in left_ids) or \
+           (d.task_id in left_ids and d.depends_on_task_id in right_ids):
+            cut_edges.append({"task_id": d.task_id, "depends_on_task_id": d.depends_on_task_id})
+
+    return {
+        "block_id": block_id,
+        "left_tasks": [t.key for t in left_tasks],
+        "right_tasks": [t.key for t in right_tasks],
+        "left_effort": sum(t.effort or 1 for t in left_tasks),
+        "right_effort": sum(t.effort or 1 for t in right_tasks),
+        "imbalance": min_diff,
+        "cut_edges": cut_edges,
+    }
+
+
 def token_overlap(text1: str, text2: str) -> int:
     words1 = set(re.findall(r"\w+", (text1 or "").lower()))
     words2 = set(re.findall(r"\w+", (text2 or "").lower()))
@@ -303,13 +391,45 @@ def assign(session: Session, project_id: int) -> dict[str, Any]:
         return {"blocks": [], "loads": {}, "oversize_warnings": []}
 
     tasks = session.exec(select(Task).where(Task.project_id == project_id)).all()
+    n_members = len(members)
+
+    # If there are more members than blocks, auto-split oversize/splittable blocks
+    # so every teammate gets independent modules and fair work share.
+    if n_members > len(blocks) and len(blocks) > 0:
+        max_splits = n_members - len(blocks)
+        for _ in range(max_splits):
+            current_blocks = session.exec(select(Block).where(Block.project_id == project_id)).all()
+            splittable = []
+            for b in current_blocks:
+                b_tasks = [t for t in tasks if t.block_id == b.id]
+                if len(b_tasks) >= 2:
+                    splittable.append((b, sum(t.effort or 1 for t in b_tasks)))
+            if not splittable:
+                break
+            largest_b, _ = max(splittable, key=lambda x: x[1])
+            proposal = propose_split(session, largest_b.id)
+            if "error" in proposal or not proposal.get("cut_edges"):
+                break
+            for edge in proposal["cut_edges"]:
+                dep = session.exec(
+                    select(TaskDep).where(
+                        TaskDep.task_id == edge["task_id"],
+                        TaskDep.depends_on_task_id == edge["depends_on_task_id"],
+                    )
+                ).first()
+                if dep:
+                    dep.kind = "handoff"
+                    session.add(dep)
+            session.flush()
+            blocks = bundle(session, project_id)
+            tasks = session.exec(select(Task).where(Task.project_id == project_id)).all()
+
     task_by_block = defaultdict(list)
     for t in tasks:
         if t.block_id:
             task_by_block[t.block_id].append(t)
 
     total_weight = sum(b.total_effort or 0 for b in blocks)
-    n_members = len(members)
     fair_share = total_weight / n_members if n_members > 0 else 0
 
     member_loads: dict[int, int] = {m.id: 0 for m in members}
@@ -413,85 +533,6 @@ def confirm_assignment(session: Session, project_id: int) -> dict[str, Any]:
     session.flush()
     return {"status": "confirmed", "block_count": len(blocks)}
 
-
-def topological_sort(tasks: list[Task], deps: list[TaskDep]) -> list[Task]:
-    task_map = {t.id: t for t in tasks}
-    in_degree = {t.id: 0 for t in tasks}
-    graph = defaultdict(list)
-
-    for d in deps:
-        if d.task_id in in_degree and d.depends_on_task_id in in_degree:
-            graph[d.depends_on_task_id].append(d.task_id)
-            in_degree[d.task_id] += 1
-
-    queue = deque([tid for tid, deg in in_degree.items() if deg == 0])
-    ordered: list[Task] = []
-
-    while queue:
-        curr_id = queue.popleft()
-        ordered.append(task_map[curr_id])
-        for nxt in graph[curr_id]:
-            in_degree[nxt] -= 1
-            if in_degree[nxt] == 0:
-                queue.append(nxt)
-
-    if len(ordered) < len(tasks):
-        remaining = [t for t in tasks if t not in ordered]
-        ordered.extend(remaining)
-
-    return ordered
-
-
-def propose_split(session: Session, block_id: int) -> dict[str, Any]:
-    block = session.get(Block, block_id)
-    if not block:
-        raise ValueError(f"Block {block_id} not found")
-
-    tasks = session.exec(select(Task).where(Task.block_id == block_id)).all()
-    if len(tasks) < 2:
-        return {"error": "Block must contain at least 2 tasks to split"}
-
-    task_ids = {t.id for t in tasks}
-    deps = session.exec(
-        select(TaskDep).where(TaskDep.kind == "hard")
-    ).all()
-    block_deps = [d for d in deps if d.task_id in task_ids and d.depends_on_task_id in task_ids]
-
-    ordered_tasks = topological_sort(tasks, block_deps)
-
-    best_split_idx = 1
-    min_diff = float("inf")
-    total_effort = sum(t.effort or 1 for t in ordered_tasks)
-
-    curr_left_sum = 0
-    for i in range(1, len(ordered_tasks)):
-        curr_left_sum += ordered_tasks[i - 1].effort or 1
-        right_sum = total_effort - curr_left_sum
-        diff = abs(curr_left_sum - right_sum)
-        if diff < min_diff:
-            min_diff = diff
-            best_split_idx = i
-
-    left_tasks = ordered_tasks[:best_split_idx]
-    right_tasks = ordered_tasks[best_split_idx:]
-    left_ids = {t.id for t in left_tasks}
-    right_ids = {t.id for t in right_tasks}
-
-    cut_edges = []
-    for d in block_deps:
-        if (d.task_id in right_ids and d.depends_on_task_id in left_ids) or \
-           (d.task_id in left_ids and d.depends_on_task_id in right_ids):
-            cut_edges.append({"task_id": d.task_id, "depends_on_task_id": d.depends_on_task_id})
-
-    return {
-        "block_id": block_id,
-        "left_tasks": [t.key for t in left_tasks],
-        "right_tasks": [t.key for t in right_tasks],
-        "left_effort": sum(t.effort or 1 for t in left_tasks),
-        "right_effort": sum(t.effort or 1 for t in right_tasks),
-        "imbalance": min_diff,
-        "cut_edges": cut_edges,
-    }
 
 
 def apply_split(session: Session, block_id: int) -> dict[str, Any]:

@@ -19,21 +19,51 @@ def parse_idea(idea: str) -> dict:
 
 
 def create_repo(name: str) -> dict:
-    """Return {full_name, url} or raise."""
+    """Create GitHub repo via GitHubService if token is available, or return fallback."""
+    settings = get_settings()
     logger.info("create_repo called for: %s", name)
+    if settings.github_token:
+        try:
+            from annie.services.github_service import GitHubService
+            gh = GitHubService()
+            return gh.create_repo(name=name, description=f"Pilot managed project: {name}", private=False)
+        except Exception as exc:
+            logger.warning("GitHub create_repo failed, using local format: %s", exc)
+
+    owner = settings.github_owner or settings.github_username or "pilot-team"
     return {
-        "full_name": f"pilot-team/{name}",
-        "url": f"https://github.com/pilot-team/{name}",
+        "full_name": f"{owner}/{name}",
+        "url": f"https://github.com/{owner}/{name}",
     }
 
 
 def validate_github_user(login: str) -> bool:
     logger.info("validate_github_user: %s", login)
+    settings = get_settings()
+    if settings.github_token:
+        try:
+            import httpx
+            resp = httpx.get(
+                f"https://api.github.com/users/{login}",
+                headers={"Authorization": f"Bearer {settings.github_token}"},
+                timeout=5.0,
+            )
+            return resp.status_code == 200
+        except Exception:
+            return True
     return True
 
 
 def invite_collaborator(repo: str, login: str) -> None:
     logger.info("invite_collaborator: %s -> %s", login, repo)
+    settings = get_settings()
+    if settings.github_token and repo and login:
+        try:
+            from annie.services.github_service import GitHubService
+            gh = GitHubService()
+            gh.invite_collaborator(repo, login)
+        except Exception as exc:
+            logger.warning("GitHub invite_collaborator error: %s", exc)
 
 
 def generate_tasks(project_id: int) -> list[int]:
@@ -86,11 +116,13 @@ def kickoff(project_id: int) -> None:
 
 
 def verify_task(task_id: int) -> dict:
-    settings = get_settings()
-    logger.info("verify_task for task %d (mode=%s)", task_id, settings.verify_mode)
-    if settings.verify_mode == "strict":
-        return {"verdict": "needs_review", "confidence": 0.0, "reason": "No evidence found"}
-    return {"verdict": "no_evidence", "confidence": 0.0, "reason": "No evidence found"}
+    logger.info("verify_task executing for task %d", task_id)
+    try:
+        from verify import verify_task_sync
+        return verify_task_sync(task_id)
+    except Exception as exc:
+        logger.exception("Verification pipeline error for task %d: %s", task_id, exc)
+        return {"verdict": "no_evidence", "confidence": 0.0, "reason": str(exc), "matched_shas": []}
 
 
 def route_blocker(blocker_id: int) -> None:

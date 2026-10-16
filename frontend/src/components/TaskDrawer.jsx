@@ -42,6 +42,26 @@ export default function TaskDrawer({ taskKey, snapshot, code, onClose, onOpenTas
       member: e.actor_member_id,
     }));
 
+  const [verifyLoading, setVerifyLoading] = useState(false);
+
+  const handleVerify = async () => {
+    setVerifyLoading(true);
+    try {
+      const res = await apiPost(`/projects/${code}/tasks/${task.key}/verify`);
+      const verdict = res?.verdict || 'checked';
+      const conf = Math.round((res?.confidence || 0) * 100);
+      if (verdict === 'verified_done') {
+        addToast(`✅ ${task.key} verified with ${conf}% confidence!`, 'green');
+      } else {
+        addToast(`🔍 Verification result: ${verdict} (${conf}%)`, 'amber');
+      }
+    } catch (err) {
+      addToast('Verification failed: ' + (err?.message || 'Error checking commits'), 'red');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
   const handleOverride = async () => {
     setOverrideLoading(true);
     try {
@@ -266,8 +286,18 @@ export default function TaskDrawer({ taskKey, snapshot, code, onClose, onOpenTas
           )}
         </div>
 
-        {/* Lead override footer */}
-        <div className="drawer-footer">
+        {/* Action footer */}
+        <div className="drawer-footer" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <button
+            className="btn btn-outline btn-sm w-full"
+            style={{ borderColor: 'var(--status-verified_done)', color: 'var(--status-verified_done)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+            onClick={handleVerify}
+            disabled={verifyLoading}
+          >
+            <GitCommit size={14} />
+            {verifyLoading ? 'Checking GitHub & Running AI CI…' : 'Run GitHub Verification'}
+          </button>
+
           {!overrideConfirm ? (
             <button
               className="btn btn-outline-red btn-sm w-full"
