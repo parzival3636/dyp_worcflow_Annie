@@ -524,3 +524,127 @@ async def ask_guide(code: str, body: AskBody):
         return {
             "answer": f"I'm monitoring project {project.name} ({code}). We have {len(tasks)} tasks total, with {len(verified)} verified done and {len(blocked)} blocked. All commits require [T-x] task keys in the commit message."
         }
+
+
+# ── Project Info & Collaborators Management ───────────────────────────────
+
+class ProjectPatchBody(BaseModel):
+    name: Optional[str] = None
+    idea: Optional[str] = None
+    repo_url: Optional[str] = None
+    repo_full_name: Optional[str] = None
+    telegram_group_id: Optional[int] = None
+
+
+@router.patch("/projects/{code}")
+def patch_project(code: str, body: ProjectPatchBody):
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        if body.name is not None:
+            project.name = body.name
+        if body.idea is not None:
+            project.idea = body.idea
+        if body.repo_url is not None:
+            project.repo_url = body.repo_url
+        if body.repo_full_name is not None:
+            project.repo_full_name = body.repo_full_name
+        if body.telegram_group_id is not None:
+            project.telegram_group_id = body.telegram_group_id
+
+        session.add(project)
+        session.commit()
+        return {"status": "ok", "project": {
+            "code": project.code,
+            "name": project.name,
+            "repo_url": project.repo_url,
+            "repo_full_name": project.repo_full_name
+        }}
+
+
+class MemberCreateBody(BaseModel):
+    name: str
+    github_login: Optional[str] = ""
+    telegram_username: Optional[str] = ""
+    telegram_phone: Optional[str] = ""
+    telegram_id: Optional[int] = None
+    role: Optional[str] = "member"
+
+
+@router.post("/projects/{code}/members")
+def add_member(code: str, body: MemberCreateBody):
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        member = Member(
+            project_id=project.id,
+            name=body.name,
+            github_login=body.github_login or "",
+            telegram_username=body.telegram_username or "",
+            telegram_id=body.telegram_id or 0,
+            role=body.role or "member",
+            invite_status="accepted" if body.github_login else "pending",
+            onboarding_state="done" if body.github_login else "awaiting_github",
+        )
+        session.add(member)
+        session.flush()
+
+        ev = Event(
+            project_id=project.id,
+            ts=datetime.now(timezone.utc),
+            actor_member_id=member.id,
+            type="member_joined",
+            payload={"name": body.name, "github_login": body.github_login, "role": body.role},
+        )
+        session.add(ev)
+        session.commit()
+        return {"status": "ok", "member_id": member.id}
+
+
+@router.delete("/projects/{code}/members/{member_id}")
+def remove_member(code: str, member_id: int):
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        member = session.get(Member, member_id)
+        if member:
+            session.delete(member)
+            session.commit()
+        return {"status": "ok"}
+
+
+@router.post("/projects/{code}/report")
+def generate_report(code: str):
+    """Generate executive summary report for faculty/judges."""
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        tasks = session.exec(select(Task).where(Task.project_id == project.id)).all()
+        members = session.exec(select(Member).where(Member.project_id == project.id)).all()
+        verified = sum(1 for t in tasks if t.status == "verified_done")
+        blocked = sum(1 for t in tasks if t.status == "blocked")
+
+        return {
+            "status": "ok",
+            "report": {
+                "project_name": project.name,
+                "project_code": project.code,
+                "status": project.status,
+                "total_tasks": len(tasks),
+                "verified_tasks": verified,
+                "blocked_tasks": blocked,
+                "completion_rate": f"{(verified / len(tasks) * 100):.1f}%" if tasks else "0%",
+                "members_count": len(members),
+                "summary": f"Project {project.name} has completed {verified} of {len(tasks)} tasks. {blocked} active bottlenecks identified and managed by Pilot coordinator.",
+                "generated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+

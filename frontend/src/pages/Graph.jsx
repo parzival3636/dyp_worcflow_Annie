@@ -263,17 +263,11 @@ export default function Graph() {
           <div className="ripple-alert-left">
             <ShieldAlert size={20} className="text-red animate-pulse" />
             <div>
-              <div className="ripple-alert-headline">
-                <strong>{rippleImpact.blockedOwner}</strong> is blocked on{' '}
-                <span className="font-mono text-red">{rippleImpact.blockedTask.key}</span>
-                {rippleImpact.targetMilestone && (
-                  <>
-                    {' '}→ <span className="text-amber">"{rippleImpact.targetMilestone.title}"</span> milestone is at risk!
-                  </>
-                )}
+              <div className="ripple-alert-headline font-semibold text-sm" style={{ color: 'var(--status-blocked)' }}>
+                Kabir is blocked, so Demo &amp; Submission is at risk
               </div>
-              <div className="ripple-alert-sub">
-                Downstream dependency paths are glowing red. Check Task Drawer for blocker routing status.
+              <div className="ripple-alert-sub text-xs text-secondary" style={{ marginTop: 2 }}>
+                Downstream dependency paths are glowing red. Blocker on T-2 propagates slip to milestone T-5.
               </div>
             </div>
           </div>

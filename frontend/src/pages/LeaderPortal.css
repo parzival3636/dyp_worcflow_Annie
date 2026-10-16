@@ -1,0 +1,293 @@
+/* ===== LeaderPortal Page Styles (Jira Light) ===== */
+.leader-portal-page {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100%;
+  background: var(--bg);
+}
+
+.leader-portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.leader-portal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.leader-portal-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.leader-portal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Layout Grid */
+.leader-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  gap: 20px;
+}
+
+.leader-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Leader Card */
+.leader-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.leader-card.border-red {
+  border-color: rgba(222, 53, 11, 0.4);
+  background: #FFFBFB;
+}
+
+.leader-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.leader-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.leader-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* Form */
+.leader-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.input-group input {
+  flex: 1;
+}
+
+.btn-icon-only {
+  padding: 6px 10px;
+}
+
+.repo-rule-box {
+  background: #F4F5F7;
+  border-left: 3px solid var(--amber);
+  padding: 10px 14px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rule-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.rule-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.code-badge {
+  background: #EBECF0;
+  padding: 4px 8px;
+  border-radius: 3px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--accent-blue);
+  display: inline-block;
+}
+
+/* Telegram bot join link box */
+.bot-join-box {
+  background: var(--accent-blue-subtle);
+  border: 1px solid #B3D4FF;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.join-left {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.join-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-blue);
+  letter-spacing: 0.04em;
+}
+
+.join-url {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Add collaborator form */
+.add-member-form {
+  background: #F4F5F7;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.collaborators-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.collab-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+
+.collab-table th {
+  background: #F4F5F7;
+  padding: 8px 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.collab-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #EBECF0;
+  vertical-align: middle;
+}
+
+.member-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Kickoff steps */
+.kickoff-status-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #F4F5F7;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+
+.kickoff-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.kickoff-step.done {
+  color: var(--text-primary);
+}
+
+/* Review Tasks */
+.review-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-task-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: #FAFBFC;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.review-task-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-task-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.review-blocker-note {
+  font-size: 12px;
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-verify-reason {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: #FFFFFF;
+  border: 1px solid var(--border-subtle);
+  padding: 6px 10px;
+  border-radius: 3px;
+}
+
+.review-task-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.empty-overrides {
+  padding: 30px;
+  background: #F4F5F7;
+  border-radius: var(--radius-sm);
+}
