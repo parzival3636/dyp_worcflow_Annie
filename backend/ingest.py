@@ -151,10 +151,9 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
             ).all()
             names = []
             for m in members:
-                if m.name:
-                    names.append(m.name)
-                    # First name
-                    names.append(m.name.split()[0])
+                if m.name and m.name.strip():
+                    names.append(m.name.strip())
+                    names.append(m.name.strip().split()[0])
                 if isinstance(m.aliases, list):
                     names.extend(m.aliases)
 

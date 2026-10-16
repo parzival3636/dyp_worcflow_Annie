@@ -134,6 +134,42 @@ def _find_project_by_code(session: Session, code: str) -> Project | None:
     ).first()
 
 
+def _resolve_context(session: Session, update: Update) -> tuple[Project | None, Member | None]:
+    """
+    Strictly resolve the active project and member based on where the command was called:
+    1. In a group chat: strictly uses the project linked to THIS specific group!
+    2. In private DM: uses the sender's most recent project membership.
+    """
+    chat = update.effective_chat
+    user = update.effective_user
+    if not user:
+        return None, None
+
+    if chat and chat.type in (ChatType.GROUP, ChatType.SUPERGROUP):
+        project = session.exec(
+            select(Project).where(Project.telegram_group_id == chat.id)
+        ).first()
+        if project:
+            member = session.exec(
+                select(Member).where(
+                    Member.project_id == project.id,
+                    Member.telegram_id == user.id,
+                )
+            ).first()
+            return project, member
+
+    # Private DM context: most recent project
+    member = session.exec(
+        select(Member).where(Member.telegram_id == user.id).order_by(col(Member.id).desc())
+    ).first()
+    project = None
+    if member and member.project_id:
+        project = session.get(Project, member.project_id)
+
+    return project, member
+
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # COMMAND HANDLERS
 # ═══════════════════════════════════════════════════════════════════════════
@@ -394,29 +430,22 @@ async def cmd_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @safe
 async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Generate task plan (calls stub)."""
+    """Generate task plan for the project."""
     if not update.message or not update.effective_user:
         return
 
     def _do():
         with get_session() as session:
-            project = None
-            member = _find_member_by_tg(session, update.effective_user.id)
-            if member:
-                project = session.get(Project, member.project_id)
-            if not project and update.effective_chat:
-                project = session.exec(
-                    select(Project).where(Project.telegram_group_id == update.effective_chat.id)
-                ).first()
+            project, member = _resolve_context(session, update)
             if not project:
-                return None
+                return None, "No project linked to this chat. Run `/linkgroup <project_code>` first."
             task_ids = stubs.generate_tasks(project.id)
             stubs.bundle_and_assign(project.id)
-            return project.name, len(task_ids)
+            return (project.name, len(task_ids)), None
 
-    result = await asyncio.to_thread(_do)
-    if not result:
-        await update.message.reply_text("You're not part of any project yet.")
+    result, err = await asyncio.to_thread(_do)
+    if err:
+        await update.message.reply_text(err, parse_mode=ParseMode.MARKDOWN)
         return
 
     await update.message.reply_text(
@@ -434,15 +463,11 @@ async def cmd_kickoff(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _do():
         with get_session() as session:
-            member = _find_member_by_tg(session, update.effective_user.id)
-            if not member:
-                return None, "You're not part of any project yet."
-            if member.role != "lead":
-                return None, "Only the project lead can kickoff."
-
-            project = session.get(Project, member.project_id)
+            project, member = _resolve_context(session, update)
             if not project:
-                return None, "Project not found."
+                return None, "No project linked to this chat. Run `/linkgroup <project_code>` first."
+            if not member or member.role != "lead":
+                return None, "Only the project lead can kickoff."
 
             project.status = "running"
             project.starts_at = datetime.now(timezone.utc)
@@ -534,16 +559,20 @@ async def cmd_mytasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _do():
         with get_session() as session:
-            member = _find_member_by_tg(session, update.effective_user.id)
+            project, member = _resolve_context(session, update)
+            if not project:
+                return None, "No project linked to this chat."
             if not member:
-                return None
+                return None, "You are not registered in this project. Send `/join` to join!"
+
             tasks = session.exec(
                 select(Task).where(
-                    Task.project_id == member.project_id,
+                    Task.project_id == project.id,
                     Task.owner_member_id == member.id,
                 )
             ).all()
-            return [
+
+            task_list = [
                 {
                     "key": t.key,
                     "title": t.title,
@@ -553,26 +582,31 @@ async def cmd_mytasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 }
                 for t in tasks
             ]
+            return (task_list, member.name, project.name), None
 
-    tasks = await asyncio.to_thread(_do)
-    if tasks is None:
-        await update.message.reply_text("You're not part of any project yet.")
+    result, err = await asyncio.to_thread(_do)
+    if err:
+        await update.message.reply_text(err, parse_mode=ParseMode.MARKDOWN)
         return
+
+    tasks, member_name, project_name = result
     if not tasks:
-        await update.message.reply_text("You don't have any tasks assigned! 🎉")
+        clean_proj = str(project_name).replace('_', ' ')
+        await update.message.reply_text(f"You don't have any tasks assigned in *{clean_proj}*! 🎉", parse_mode=ParseMode.MARKDOWN)
         return
 
     status_emoji = {
         "todo": "⬜ Todo", "in_progress": "🔵 In Progress", "blocked": "🚧 Blocked",
         "claimed_done": "🟡 Claimed Done", "needs_review": "🔍 Needs Review", "verified_done": "✅ Verified Done",
     }
-    lines = []
+    clean_proj = str(project_name).replace('_', ' ')
+    lines = [f"📋 *Tasks assigned to {member_name} ({clean_proj}):*\n"]
     for t in tasks:
         label = status_emoji.get(t["status"], t["status"].replace("_", " "))
         title = str(t['title']).replace('_', ' ')
         lines.append(f"{label.split()[0]} *{t['key']}*: {title} ({label}, {t['progress']}%) — {t['deadline']}")
 
-    text_to_send = "📋 *Your Tasks:*\n\n" + "\n".join(lines)
+    text_to_send = "\n".join(lines)
     try:
         await update.message.reply_text(text_to_send, parse_mode=ParseMode.MARKDOWN)
     except Exception:
@@ -587,14 +621,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _do():
         with get_session() as session:
-            project = None
-            member = _find_member_by_tg(session, update.effective_user.id)
-            if member:
-                project = session.get(Project, member.project_id)
-            if not project and update.effective_chat:
-                project = session.exec(
-                    select(Project).where(Project.telegram_group_id == update.effective_chat.id)
-                ).first()
+            project, member = _resolve_context(session, update)
             if not project:
                 return None
 
@@ -602,18 +629,31 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 select(Task).where(Task.project_id == project.id)
             ).all()
 
+            members = session.exec(
+                select(Member).where(Member.project_id == project.id)
+            ).all()
+            member_names = {m.id: m.name for m in members}
+
             counts = {}
             for t in tasks:
                 counts[t.status] = counts.get(t.status, 0) + 1
 
             blockers = session.exec(
-                select(Blocker).where(
-                    Blocker.status == "open",
-                )
+                select(Blocker).where(Blocker.status == "open")
             ).all()
-            # Filter to this project's tasks
             project_task_ids = {t.id for t in tasks}
             open_blockers = [b for b in blockers if b.task_id in project_task_ids]
+
+            task_list = [
+                {
+                    "key": t.key,
+                    "title": t.title,
+                    "status": t.status,
+                    "owner": member_names.get(t.owner_member_id, "Unassigned"),
+                    "progress": t.progress,
+                }
+                for t in tasks
+            ]
 
             return {
                 "name": project.name,
@@ -621,11 +661,12 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "total": len(tasks),
                 "counts": counts,
                 "blockers": len(open_blockers),
+                "tasks": task_list,
             }
 
     data = await asyncio.to_thread(_do)
     if not data:
-        await update.message.reply_text("You're not part of any project yet.")
+        await update.message.reply_text("No project linked to this chat. Run `/linkgroup <project_code>` first.")
         return
 
     status_labels = {
@@ -649,6 +690,13 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data["blockers"]:
         lines.append(f"\n🚧 Open blockers: {data['blockers']}")
 
+    if data["tasks"]:
+        lines.append("\n*Tasks & Assignees:*")
+        for t in data["tasks"]:
+            emoji = status_labels.get(t["status"], "⬜").split()[0]
+            clean_title = str(t['title']).replace('_', ' ')
+            lines.append(f"  {emoji} *{t['key']}* ({t['owner']}): {clean_title}")
+
     status_text = "\n".join(lines)
     try:
         await update.message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN)
@@ -670,17 +718,20 @@ async def cmd_ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _do():
         with get_session() as session:
-            member = _find_member_by_tg(session, update.effective_user.id)
-            if not member:
+            project, member = _resolve_context(session, update)
+            if not project:
                 return None
-            return stubs.guide_answer(member.project_id, question)
+            return stubs.guide_answer(project.id, question)
 
     answer = await asyncio.to_thread(_do)
     if answer is None:
-        await update.message.reply_text("You're not part of any project yet.")
+        await update.message.reply_text("No project linked to this chat.")
         return
 
-    await update.message.reply_text(answer, parse_mode=ParseMode.MARKDOWN)
+    try:
+        await update.message.reply_text(answer, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await update.message.reply_text(answer)
 
 
 @safe
@@ -691,17 +742,20 @@ async def cmd_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _do():
         with get_session() as session:
-            member = _find_member_by_tg(session, update.effective_user.id)
-            if not member:
+            project, member = _resolve_context(session, update)
+            if not project:
                 return None
-            return stubs.guide_report(member.project_id)
+            return stubs.guide_report(project.id)
 
     report = await asyncio.to_thread(_do)
     if report is None:
-        await update.message.reply_text("You're not part of any project yet.")
+        await update.message.reply_text("No project linked to this chat.")
         return
 
-    await update.message.reply_text(report, parse_mode=ParseMode.MARKDOWN)
+    try:
+        await update.message.reply_text(report, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await update.message.reply_text(report)
 
 
 @safe
@@ -995,17 +1049,19 @@ async def _handle_github_onboarding(update: Update, context, member: Member, tex
 # GROUP CHAT HANDLER
 # ═══════════════════════════════════════════════════════════════════════════
 
-@safe
 async def group_text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle text messages in linked group chats."""
-    if not update.message:
-        return
-    chat = update.effective_chat
-    if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
-        return
+    try:
+        if not update.message:
+            return
+        chat = update.effective_chat
+        if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
+            return
 
-    from ingest import handle_group_message
-    await handle_group_message(update, context)
+        from ingest import handle_group_message
+        await handle_group_message(update, context)
+    except Exception:
+        logger.exception("group_text_handler failed")
 
 
 @safe

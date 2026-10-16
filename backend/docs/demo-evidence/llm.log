@@ -19,3 +19,16 @@
 {"ts": "2026-10-16T14:24:43Z", "model": "qwen2.5:7b", "latency_s": 10.14, "system_prompt_len": 4274, "user_prompt_len": 642, "response_len": 620}
 {"ts": "2026-10-16T14:25:59Z", "model": "qwen2.5:7b", "latency_s": 4.703, "system_prompt_len": 750, "user_prompt_len": 263, "response_len": 216}
 {"ts": "2026-10-16T14:26:34Z", "model": "qwen2.5:7b", "latency_s": 8.109, "system_prompt_len": 5114, "user_prompt_len": 446, "response_len": 419}
+{"ts": "2026-10-16T14:28:19Z", "model": "qwen2.5:7b", "latency_s": 4.906, "system_prompt_len": 750, "user_prompt_len": 259, "response_len": 214}
+{"ts": "2026-10-16T14:30:39Z", "model": "qwen2.5:7b", "latency_s": 4.719, "system_prompt_len": 750, "user_prompt_len": 259, "response_len": 214}
+{"ts": "2026-10-16T14:32:42Z", "model": "qwen2.5:7b", "latency_s": 13.515, "system_prompt_len": 4274, "user_prompt_len": 734, "response_len": 944}
+{"ts": "2026-10-16T14:32:59Z", "model": "qwen2.5:7b", "latency_s": 5.063, "system_prompt_len": 750, "user_prompt_len": 263, "response_len": 218}
+{"ts": "2026-10-16T14:35:20Z", "model": "qwen2.5:7b", "latency_s": 5.094, "system_prompt_len": 750, "user_prompt_len": 263, "response_len": 232}
+{"ts": "2026-10-16T14:37:39Z", "model": "qwen2.5:7b", "latency_s": 4.391, "system_prompt_len": 750, "user_prompt_len": 264, "response_len": 232}
+{"ts": "2026-10-16T14:39:59Z", "model": "qwen2.5:7b", "latency_s": 4.735, "system_prompt_len": 750, "user_prompt_len": 264, "response_len": 283}
+{"ts": "2026-10-16T14:42:18Z", "model": "qwen2.5:7b", "latency_s": 3.484, "system_prompt_len": 750, "user_prompt_len": 264, "response_len": 190}
+{"ts": "2026-10-16T14:44:26Z", "model": "qwen2.5:7b", "latency_s": 7.734, "system_prompt_len": 5114, "user_prompt_len": 497, "response_len": 480}
+{"ts": "2026-10-16T14:44:39Z", "model": "qwen2.5:7b", "latency_s": 5.0, "system_prompt_len": 750, "user_prompt_len": 264, "response_len": 214}
+{"ts": "2026-10-16T14:46:03Z", "model": "qwen2.5:7b", "latency_s": 7.25, "system_prompt_len": 5114, "user_prompt_len": 448, "response_len": 448}
+{"ts": "2026-10-16T14:51:22Z", "model": "qwen2.5:7b", "latency_s": 14.203, "system_prompt_len": 4274, "user_prompt_len": 167, "response_len": 341}
+{"ts": "2026-10-16T15:10:10Z", "model": "qwen2.5:7b", "latency_s": 23.828, "system_prompt_len": 4274, "user_prompt_len": 703, "response_len": 969}
