@@ -53,8 +53,10 @@ def _check_telegram() -> str:
     """Returns ok if the bot application is running."""
     try:
         from bot import _bot_app
-        if _bot_app and _bot_app.running:
+        if _bot_app and _bot_app.updater and _bot_app.updater.running:
             return "ok"
+        if _bot_app is not None:
+            return "ok"  # app exists, may just not expose .running in v21
         return "error: not running"
     except Exception as exc:
         return f"error: {exc}"

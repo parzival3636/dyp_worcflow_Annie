@@ -345,6 +345,54 @@ async def _handle_join(update: Update, context: ContextTypes.DEFAULT_TYPE, code:
 
 
 @safe
+async def cmd_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Allow members in a linked group or via code to join the project."""
+    if not update.message or not update.effective_user:
+        return
+    chat = update.effective_chat
+    tg_user = update.effective_user
+    code = context.args[0] if context.args else None
+
+    def _join():
+        with get_session() as session:
+            project = None
+            if code:
+                project = _find_project_by_code(session, code)
+            elif chat and chat.type in (ChatType.GROUP, ChatType.SUPERGROUP):
+                project = session.exec(
+                    select(Project).where(Project.telegram_group_id == chat.id)
+                ).first()
+
+            if not project:
+                return None, "Please specify a project code: `/join <project_code>`"
+
+            existing = session.exec(
+                select(Member).where(
+                    Member.project_id == project.id,
+                    Member.telegram_id == tg_user.id,
+                )
+            ).first()
+            if existing:
+                return project.name, f"You are already a member of *{project.name}*!"
+
+            member = Member(
+                project_id=project.id,
+                name=tg_user.full_name,
+                telegram_id=tg_user.id,
+                telegram_username=tg_user.username,
+                role="member",
+                invite_status="accepted",
+                onboarding_state="done",
+            )
+            session.add(member)
+            return project.name, f"🎉 Welcome {tg_user.full_name}! You have joined *{project.name}*."
+
+    _, text = await asyncio.to_thread(_join)
+    await update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+
+
+
+@safe
 async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Generate task plan (calls stub)."""
     if not update.message or not update.effective_user:
@@ -352,10 +400,14 @@ async def cmd_plan(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _do():
         with get_session() as session:
+            project = None
             member = _find_member_by_tg(session, update.effective_user.id)
-            if not member:
-                return None
-            project = session.get(Project, member.project_id)
+            if member:
+                project = session.get(Project, member.project_id)
+            if not project and update.effective_chat:
+                project = session.exec(
+                    select(Project).where(Project.telegram_group_id == update.effective_chat.id)
+                ).first()
             if not project:
                 return None
             task_ids = stubs.generate_tasks(project.id)
@@ -463,8 +515,15 @@ async def cmd_kickoff(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             logger.exception("Failed to DM member %s", tg_id)
 
-    await update.message.reply_text("🚀 *Project kicked off!* Everyone has been notified.",
-                                     parse_mode=ParseMode.MARKDOWN)
+    summary_lines = ["🚀 *Project kicked off!* Everyone has been notified.\n\n*Assigned Tasks:*"]
+    for tg_id, info in (member_tasks or {}).items():
+        summary_lines.append(f"\n👤 *{info['name']}:*")
+        for t in info["tasks"]:
+            summary_lines.append(f"  • *{t['key']}*: {t['title']} ({t['deadline']})")
+
+    summary_lines.append("\n💡 *Commit rule:* Put `[T-n]` in commit messages or chat updates about your tasks here!")
+    await update.message.reply_text("\n".join(summary_lines), parse_mode=ParseMode.MARKDOWN)
+
 
 
 @safe
@@ -504,18 +563,20 @@ async def cmd_mytasks(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     status_emoji = {
-        "todo": "⬜", "in_progress": "🔵", "blocked": "🚧",
-        "claimed_done": "🟡", "needs_review": "🔍", "verified_done": "✅",
+        "todo": "⬜ Todo", "in_progress": "🔵 In Progress", "blocked": "🚧 Blocked",
+        "claimed_done": "🟡 Claimed Done", "needs_review": "🔍 Needs Review", "verified_done": "✅ Verified Done",
     }
     lines = []
     for t in tasks:
-        emoji = status_emoji.get(t["status"], "❓")
-        lines.append(f"{emoji} *{t['key']}*: {t['title']} ({t['status']}, {t['progress']}%) — {t['deadline']}")
+        label = status_emoji.get(t["status"], t["status"].replace("_", " "))
+        title = str(t['title']).replace('_', ' ')
+        lines.append(f"{label.split()[0]} *{t['key']}*: {title} ({label}, {t['progress']}%) — {t['deadline']}")
 
-    await update.message.reply_text(
-        "📋 *Your Tasks:*\n\n" + "\n".join(lines),
-        parse_mode=ParseMode.MARKDOWN,
-    )
+    text_to_send = "📋 *Your Tasks:*\n\n" + "\n".join(lines)
+    try:
+        await update.message.reply_text(text_to_send, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await update.message.reply_text(text_to_send)
 
 
 @safe
@@ -526,10 +587,14 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _do():
         with get_session() as session:
+            project = None
             member = _find_member_by_tg(session, update.effective_user.id)
-            if not member:
-                return None
-            project = session.get(Project, member.project_id)
+            if member:
+                project = session.get(Project, member.project_id)
+            if not project and update.effective_chat:
+                project = session.exec(
+                    select(Project).where(Project.telegram_group_id == update.effective_chat.id)
+                ).first()
             if not project:
                 return None
 
@@ -563,16 +628,32 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("You're not part of any project yet.")
         return
 
+    status_labels = {
+        "todo": "⬜ Todo",
+        "in_progress": "🔵 In Progress",
+        "blocked": "🚧 Blocked",
+        "claimed_done": "🟡 Claimed Done",
+        "needs_review": "🔍 Needs Review",
+        "verified_done": "✅ Verified Done",
+    }
+
+    proj_name = str(data['name']).replace('_', ' ')
+    proj_status = str(data['status']).replace('_', ' ')
     lines = [
-        f"📊 *{data['name']}* ({data['status']})\n",
+        f"📊 *{proj_name}* ({proj_status})\n",
         f"Total tasks: {data['total']}",
     ]
     for status, count in sorted(data["counts"].items()):
-        lines.append(f"  • {status}: {count}")
+        lbl = status_labels.get(status, status.replace("_", " ").title())
+        lines.append(f"  • {lbl}: {count}")
     if data["blockers"]:
         lines.append(f"\n🚧 Open blockers: {data['blockers']}")
 
-    await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+    status_text = "\n".join(lines)
+    try:
+        await update.message.reply_text(status_text, parse_mode=ParseMode.MARKDOWN)
+    except Exception:
+        await update.message.reply_text(status_text)
 
 
 @safe
@@ -988,6 +1069,7 @@ async def start_bot():
     _bot_app.add_handler(CommandHandler("report", cmd_report))
     _bot_app.add_handler(CommandHandler("followup", cmd_followup))
     _bot_app.add_handler(CommandHandler("linkgroup", cmd_linkgroup))
+    _bot_app.add_handler(CommandHandler("join", cmd_join))
 
     _bot_app.add_handler(CallbackQueryHandler(callback_handler))
 
@@ -1024,8 +1106,17 @@ async def stop_bot():
     global _bot_app
     if _bot_app:
         logger.info("Stopping Telegram bot…")
-        if _bot_app.updater and _bot_app.updater.running:
-            await _bot_app.updater.stop()
-        await _bot_app.stop()
-        await _bot_app.shutdown()
+        try:
+            if _bot_app.updater and _bot_app.updater.running:
+                await _bot_app.updater.stop()
+        except Exception:
+            logger.debug("Updater was not running")
+        try:
+            await _bot_app.stop()
+        except RuntimeError:
+            logger.debug("Application was not running")
+        try:
+            await _bot_app.shutdown()
+        except Exception:
+            logger.debug("Shutdown already done")
         _bot_app = None

@@ -131,6 +131,20 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
                 )
             ).first()
 
+            if not member and not tg_user.is_bot:
+                # Auto-enroll member chatting in the linked project group!
+                member = Member(
+                    project_id=project.id,
+                    name=tg_user.full_name,
+                    telegram_id=tg_user.id,
+                    telegram_username=tg_user.username,
+                    role="member",
+                    invite_status="accepted",
+                    onboarding_state="done",
+                )
+                session.add(member)
+                session.flush()
+
             # Get all member names for cheap filter
             members = session.exec(
                 select(Member).where(Member.project_id == project.id)
