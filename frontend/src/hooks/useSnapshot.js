@@ -3,10 +3,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 const POLL_INTERVAL = 2000;
 
-/* ===== Owner color from palette ===== */
+/* ===== Owner color from palette (Jira Accessible) ===== */
 const OWNER_COLORS = [
-  '#58A6FF', '#3FB950', '#D29922', '#F85149',
-  '#BC8CFF', '#79C0FF', '#56D364', '#FF7B72',
+  '#0052CC', '#00875A', '#FF8B00', '#DE350B',
+  '#6554C0', '#00A3BF', '#36B37E', '#FF5630',
 ];
 
 export function getOwnerColor(memberId) {

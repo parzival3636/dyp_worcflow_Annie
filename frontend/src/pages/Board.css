@@ -189,10 +189,14 @@
 }
 
 /* Empty column state */
-.board-column-empty {
+.board-column-empty,
+.board-empty-col {
   padding: 24px 12px;
   text-align: center;
   color: var(--text-muted);
   font-size: 12px;
-  font-style: italic;
+  border: 1px dashed #DFE1E6;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
 }
