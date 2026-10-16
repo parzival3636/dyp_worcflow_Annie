@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-flash-lite-latest"
     completion_threshold: int = 85
 
+    # Auth & Security
+    jwt_secret_key: str = "pilot_super_secret_jwt_key_2026_dev_prod"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60 * 24 * 7
+    frontend_url: str = "http://localhost:5173"
+
     # Uppercase aliases for compatibility across modules
     @property
     def TELEGRAM_BOT_TOKEN(self) -> str:

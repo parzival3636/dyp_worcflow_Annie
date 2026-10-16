@@ -49,11 +49,10 @@ export default function HomePage() {
         </Link>
 
         <div className="home-nav-links">
-          <a href="#how-it-works">How It Works</a>
-          <a href="#features">Features</a>
-          <a href="#demo">Live Demo</a>
-          <Link to="/p/demo01" className="btn btn-sm btn-primary">
-            Open Dashboard
+          <Link to="/projects">Projects Hub</Link>
+          <Link to="/login">Sign In</Link>
+          <Link to="/projects/new" className="btn btn-sm btn-primary">
+            + New Project
           </Link>
           <button
             className="theme-toggle-btn"

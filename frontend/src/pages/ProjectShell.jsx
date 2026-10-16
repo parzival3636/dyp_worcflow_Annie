@@ -115,16 +115,16 @@ export default function ProjectShell() {
       <aside className={`sidebar ${sidebarExpanded ? 'expanded' : 'collapsed'}`}>
         <div className="sidebar-header">
           {sidebarExpanded ? (
-            <Link to="/" className="sidebar-brand">
+            <Link to="/projects" className="sidebar-brand" title="Back to Projects Hub">
               <div className="sidebar-brand-icon">
                 <Plane size={15} />
               </div>
-              <span>Pilot Ops</span>
+              <span>Pilot Hub</span>
             </Link>
           ) : (
-            <div className="sidebar-brand-icon" style={{ margin: '0 auto' }}>
+            <Link to="/projects" className="sidebar-brand-icon" style={{ margin: '0 auto' }} title="Back to Projects Hub">
               <Plane size={15} />
-            </div>
+            </Link>
           )}
 
           <button
@@ -223,7 +223,7 @@ export default function ProjectShell() {
 
           {/* Portals */}
           <div className="sidebar-group">
-            {sidebarExpanded && <div className="sidebar-group-title">Portals</div>}
+            {sidebarExpanded && <div className="sidebar-group-title">Portals & Setup</div>}
             <NavLink
               to={`/p/${code}/lead`}
               className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
@@ -231,6 +231,30 @@ export default function ProjectShell() {
             >
               <Shield size={15} className="text-accent" />
               {sidebarExpanded && <span>Leader Portal</span>}
+            </NavLink>
+
+            <NavLink
+              to={`/p/${code}/setup`}
+              className={({ isActive }) => `sidebar-nav-item ${isActive ? 'active' : ''}`}
+              title="Telegram Binding & Invites"
+            >
+              <Send size={15} style={{ color: snapshot?.project?.telegram_status === 'connected' ? '#10b981' : '#f59e0b' }} />
+              {sidebarExpanded && <span>Telegram &amp; Invites</span>}
+              {sidebarExpanded && (
+                <span
+                  style={{
+                    fontSize: '9px',
+                    padding: '1px 6px',
+                    borderRadius: '999px',
+                    marginLeft: 'auto',
+                    backgroundColor: snapshot?.project?.telegram_status === 'connected' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+                    color: snapshot?.project?.telegram_status === 'connected' ? '#10b981' : '#f59e0b',
+                    fontWeight: 600
+                  }}
+                >
+                  {snapshot?.project?.telegram_status === 'connected' ? 'LIVE' : 'SETUP'}
+                </span>
+              )}
             </NavLink>
 
             <NavLink

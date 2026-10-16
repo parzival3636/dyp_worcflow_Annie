@@ -122,10 +122,14 @@ def generate_plan(
     if not project:
         raise ValueError(f"Project {project_id} not found")
 
-    prompt_idea = idea or project.idea or project.name
+    prompt_idea = idea or project.idea or project.description or project.name
     skills_str = ", ".join(skills) if skills else "General Full-stack"
+    fr_str = f"\nFunctional Requirements:\n{project.functional_requirements}" if project.functional_requirements else ""
+    nfr_str = f"\nNon-Functional Reqs & Constraints:\n{project.non_functional_requirements}" if project.non_functional_requirements else ""
+
     user_prompt = (
-        f"Project Idea: {prompt_idea}\n"
+        f"Project Name: {project.name}\n"
+        f"Project Idea: {prompt_idea}{fr_str}{nfr_str}\n"
         f"Team Size: {team_size}\n"
         f"Skills Available: {skills_str}\n"
         f"Duration Window: {duration_hours} hours\n"
@@ -135,11 +139,16 @@ def generate_plan(
     plan_response: P2Plan = call_json(P2_PLAN_PROMPT, user_prompt, P2Plan)
     validated_tasks = validate_and_sanitize_tasks(plan_response.tasks)
 
-    # Delete existing tasks for this project if re-generating
+    # Protect started tasks on re-generation
     existing_tasks = session.exec(select(Task).where(Task.project_id == project_id)).all()
-    for et in existing_tasks:
-        session.delete(et)
-    session.flush()
+    has_active_work = any(t.status not in ("todo", "backlog") for t in existing_tasks)
+    if not has_active_work:
+        for et in existing_tasks:
+            session.delete(et)
+        session.flush()
+
+    project.plan_status = "generated"
+    session.add(project)
 
     inserted_tasks: list[Task] = []
     title_to_task: dict[str, Task] = {}

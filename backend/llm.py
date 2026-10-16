@@ -345,3 +345,15 @@ def call_json(
     # Fallback if exhausted
     fallback = get_fallback(model_cls, user)
     return AwaitableModelWrapper(fallback)
+
+
+def _safe_default(model_cls: type) -> Any:
+    """Safe fallback when LLM parsing/network fails."""
+    try:
+        return model_cls()
+    except Exception:
+        try:
+            return model_cls(results=[])
+        except Exception:
+            return get_fallback(model_cls, "")
+

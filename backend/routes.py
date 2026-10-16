@@ -17,21 +17,21 @@ Implements all endpoints from PRD Section 13:
 - GET /api/projects/{code}/events
 - GET /api/projects/{code}/contributions
 """
-from __future__ import annotations
-
-import asyncio
-from datetime import datetime, timezone
+import secrets
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from sqlmodel import select
 
+from auth import get_current_user, get_current_user_optional
+from config import get_settings
 from db import get_session
 from models import (
     Block, Blocker, CommitLog, Contradiction, Event,
-    Member, Project, Task, TaskDep, Verification
+    Invite, Member, Project, Task, TaskDep, User, Verification
 )
 
 router = APIRouter()
@@ -39,22 +39,143 @@ router = APIRouter()
 
 # ── Project metadata & listing ─────────────────────────────────────────────
 
+class ProjectCreateRequest(BaseModel):
+    name: str
+    idea: Optional[str] = None
+    description: Optional[str] = None
+    functional_requirements: Optional[str] = None
+    non_functional_requirements: Optional[str] = None
+    constraints: Optional[str] = None
+    repo_url: Optional[str] = None
+    repo_full_name: Optional[str] = None
+
+
+class InviteCreateRequest(BaseModel):
+    email: EmailStr
+    role: str = "member"
+
+
+class InviteAcceptRequest(BaseModel):
+    name: Optional[str] = None
+    github_login: Optional[str] = None
+    telegram_username: Optional[str] = None
+
+
+def _generate_project_code() -> str:
+    """Generate a unique 6-character lowercase alphanumeric project code."""
+    alphabet = "23456789abcdefghjkmnpqrstuvwxyz"
+    return "".join(secrets.choice(alphabet) for _ in range(6))
+
+
 @router.get("/projects")
-def list_projects():
-    """List recent projects with basic summary."""
+def list_projects(current_user: Optional[User] = Depends(get_current_user_optional)):
+    """List projects with comprehensive summary."""
     with get_session() as session:
-        projects = session.exec(select(Project)).all()
+        projects = session.exec(select(Project).order_by(Project.id.desc())).all()
         return [
             {
+                "id": p.id,
                 "code": p.code,
                 "name": p.name,
+                "idea": p.idea or p.description,
+                "description": p.description or p.idea,
                 "status": p.status,
+                "plan_status": p.plan_status or "draft",
                 "repo_url": p.repo_url,
+                "repo_full_name": p.repo_full_name,
+                "telegram_chat_id": p.telegram_chat_id or p.telegram_group_id,
+                "telegram_status": p.telegram_status or "disconnected",
+                "is_leader": bool(current_user and p.leader_user_id == current_user.id),
+                "created_at": p.created_at.isoformat() if p.created_at else None,
                 "starts_at": p.starts_at.isoformat() if p.starts_at else None,
                 "ends_at": p.ends_at.isoformat() if p.ends_at else None,
             }
             for p in projects
         ]
+
+
+@router.post("/projects")
+def create_project(
+    payload: ProjectCreateRequest,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """Create a new project dynamically from the web application."""
+    if not payload.name or not payload.name.strip():
+        raise HTTPException(status_code=400, detail="Project name is required")
+
+    with get_session() as session:
+        # Generate unique code
+        code = _generate_project_code()
+        while session.exec(select(Project).where(Project.code == code)).first():
+            code = _generate_project_code()
+
+        user_id = current_user.id if current_user else None
+        leader_name = current_user.name if current_user else "Team Lead"
+        leader_email = current_user.email if current_user else None
+
+        now = datetime.now(timezone.utc)
+        project = Project(
+            code=code,
+            name=payload.name.strip(),
+            idea=payload.idea or payload.description,
+            description=payload.description or payload.idea,
+            functional_requirements=payload.functional_requirements,
+            non_functional_requirements=payload.non_functional_requirements,
+            constraints=payload.constraints,
+            repo_url=payload.repo_url,
+            repo_full_name=payload.repo_full_name,
+            leader_user_id=user_id,
+            status="planning",
+            plan_status="draft",
+            telegram_status="disconnected",
+            created_at=now,
+        )
+        session.add(project)
+        session.flush()
+        session.refresh(project)
+
+        # Automatically add the leader as the first project member
+        lead_member = Member(
+            project_id=project.id,
+            user_id=user_id,
+            name=leader_name,
+            email=leader_email,
+            role="lead",
+            invite_status="accepted",
+            onboarding_state="done",
+        )
+        session.add(lead_member)
+        session.flush()
+        session.refresh(lead_member)
+
+        project.lead_member_id = lead_member.id
+        session.add(project)
+
+        # Log project creation event
+        event = Event(
+            project_id=project.id,
+            ts=now,
+            actor_member_id=lead_member.id,
+            type="project_created",
+            payload={
+                "code": project.code,
+                "name": project.name,
+                "leader": leader_name,
+            },
+        )
+        session.add(event)
+
+        return {
+            "id": project.id,
+            "code": project.code,
+            "name": project.name,
+            "description": project.description,
+            "status": project.status,
+            "plan_status": project.plan_status,
+            "telegram_status": project.telegram_status,
+            "repo_url": project.repo_url,
+            "lead_member_id": lead_member.id,
+        }
 
 
 @router.get("/projects/{code}")
@@ -65,14 +186,261 @@ def get_project(code: str):
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         return {
+            "id": project.id,
             "code": project.code,
             "name": project.name,
             "idea": project.idea,
+            "description": project.description or project.idea,
+            "functional_requirements": project.functional_requirements,
+            "non_functional_requirements": project.non_functional_requirements,
+            "constraints": project.constraints,
             "repo_full_name": project.repo_full_name,
             "repo_url": project.repo_url,
+            "telegram_chat_id": project.telegram_chat_id or project.telegram_group_id,
+            "telegram_status": project.telegram_status or "disconnected",
             "status": project.status,
+            "plan_status": project.plan_status or "draft",
             "starts_at": project.starts_at.isoformat() if project.starts_at else None,
             "ends_at": project.ends_at.isoformat() if project.ends_at else None,
+            "created_at": project.created_at.isoformat() if project.created_at else None,
+        }
+
+
+@router.get("/projects/{code}/telegram-status")
+def get_telegram_status(code: str):
+    """Check Telegram binding status for the project."""
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        chat_id = project.telegram_chat_id or project.telegram_group_id
+        is_connected = bool(chat_id and (project.telegram_status == "connected" or chat_id != 0))
+
+        # Recent messages count in group
+        msg_count = 0
+        if chat_id:
+            from models import Message
+            msg_count = len(session.exec(
+                select(Message).where(Message.chat_id == chat_id)
+            ).all())
+
+        return {
+            "code": project.code,
+            "telegram_status": "connected" if is_connected else "disconnected",
+            "telegram_chat_id": chat_id,
+            "message_count": msg_count,
+            "instructions": {
+                "step1": "Create a Telegram group with your project team",
+                "step2": "Add Pilot bot (@pilot_coordinator_bot) to your group",
+                "step3": f"Send /link {code} in the group chat",
+            }
+        }
+
+
+@router.post("/projects/{code}/telegram-disconnect")
+def disconnect_telegram(code: str):
+    """Disconnect Telegram group from the project."""
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        project.telegram_chat_id = None
+        project.telegram_group_id = None
+        project.telegram_status = "disconnected"
+        session.add(project)
+
+        event = Event(
+            project_id=project.id,
+            ts=datetime.now(timezone.utc),
+            type="telegram_disconnected",
+            payload={"code": project.code},
+        )
+        session.add(event)
+        return {"ok": True, "message": "Telegram group unlinked"}
+
+
+# ── Invites ────────────────────────────────────────────────────────────────
+
+@router.get("/projects/{code}/invites")
+def list_project_invites(code: str):
+    """List pending invites for the project."""
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        invites = session.exec(
+            select(Invite).where(Invite.project_id == project.id).order_by(Invite.id.desc())
+        ).all()
+        return [
+            {
+                "id": inv.id,
+                "email": inv.email,
+                "role": inv.role,
+                "token": inv.token,
+                "status": inv.status,
+                "created_at": inv.created_at.isoformat() if inv.created_at else None,
+                "invite_url": f"/invite/{inv.token}",
+            }
+            for inv in invites
+        ]
+
+
+@router.post("/projects/{code}/invites")
+def create_project_invite(
+    code: str,
+    payload: InviteCreateRequest,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """Create and issue an invite link for a team member or guide."""
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        token = secrets.token_urlsafe(24)
+        now = datetime.now(timezone.utc)
+        invite = Invite(
+            project_id=project.id,
+            email=payload.email.lower().strip(),
+            role=payload.role if payload.role in ("lead", "member", "guide") else "member",
+            token=token,
+            status="pending",
+            invited_by_user_id=current_user.id if current_user else None,
+            created_at=now,
+            expires_at=now + timedelta(days=7),
+        )
+        session.add(invite)
+
+        # Check if member already exists
+        existing_member = session.exec(
+            select(Member).where(
+                Member.project_id == project.id,
+                Member.email == payload.email.lower().strip(),
+            )
+        ).first()
+
+        if not existing_member:
+            member = Member(
+                project_id=project.id,
+                name=payload.email.split("@")[0],
+                email=payload.email.lower().strip(),
+                role=invite.role,
+                invite_status="pending",
+                onboarding_state="new",
+            )
+            session.add(member)
+
+        return {
+            "token": token,
+            "email": invite.email,
+            "role": invite.role,
+            "invite_url": f"/invite/{token}",
+        }
+
+
+@router.get("/invites/{token}")
+def get_invite_details(token: str):
+    """Retrieve invite information for acceptance screen."""
+    with get_session() as session:
+        invite = session.exec(select(Invite).where(Invite.token == token)).first()
+        if not invite:
+            raise HTTPException(status_code=404, detail="Invalid or expired invite link")
+
+        project = session.get(Project, invite.project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Associated project not found")
+
+        return {
+            "token": invite.token,
+            "email": invite.email,
+            "role": invite.role,
+            "status": invite.status,
+            "project": {
+                "name": project.name,
+                "code": project.code,
+                "description": project.description or project.idea,
+            }
+        }
+
+
+@router.post("/invites/{token}/accept")
+def accept_invite(
+    token: str,
+    payload: InviteAcceptRequest,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+):
+    """Accept an invitation to join a project."""
+    with get_session() as session:
+        invite = session.exec(select(Invite).where(Invite.token == token)).first()
+        if not invite:
+            raise HTTPException(status_code=404, detail="Invalid or expired invite")
+
+        if invite.status == "accepted":
+            project = session.get(Project, invite.project_id)
+            return {"ok": True, "project_code": project.code if project else None, "message": "Already accepted"}
+
+        project = session.get(Project, invite.project_id)
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        invite.status = "accepted"
+        session.add(invite)
+
+        # Find or create member
+        member = session.exec(
+            select(Member).where(
+                Member.project_id == project.id,
+                Member.email == invite.email,
+            )
+        ).first()
+
+        user_id = current_user.id if current_user else None
+        display_name = payload.name or (current_user.name if current_user else invite.email.split("@")[0])
+
+        if not member:
+            member = Member(
+                project_id=project.id,
+                user_id=user_id,
+                name=display_name,
+                email=invite.email,
+                github_login=payload.github_login,
+                telegram_username=payload.telegram_username,
+                role=invite.role,
+                invite_status="accepted",
+                onboarding_state="done",
+            )
+            session.add(member)
+        else:
+            member.invite_status = "accepted"
+            member.onboarding_state = "done"
+            if user_id:
+                member.user_id = user_id
+            if payload.name:
+                member.name = payload.name
+            if payload.github_login:
+                member.github_login = payload.github_login
+            if payload.telegram_username:
+                member.telegram_username = payload.telegram_username
+            session.add(member)
+
+        # Log member joined event
+        event = Event(
+            project_id=project.id,
+            ts=datetime.now(timezone.utc),
+            actor_member_id=member.id if member.id else None,
+            type="member_joined",
+            payload={"name": member.name, "email": member.email, "role": member.role},
+        )
+        session.add(event)
+
+        return {
+            "ok": True,
+            "project_code": project.code,
+            "member_id": member.id,
+            "name": member.name,
         }
 
 
@@ -94,9 +462,13 @@ def get_snapshot(code: str):
             {
                 "id": m.id,
                 "name": m.name,
+                "email": m.email,
                 "role": m.role,
                 "github_login": m.github_login,
+                "telegram_username": m.telegram_username,
+                "telegram_id": m.telegram_id,
                 "invite_status": m.invite_status,
+                "onboarding_state": m.onboarding_state,
                 "color": None, # Computed on frontend by getOwnerColor
             }
             for m in members
@@ -242,12 +614,24 @@ def get_snapshot(code: str):
 
         return {
             "project": {
+                "id": project.id,
                 "code": project.code,
                 "name": project.name,
+                "idea": project.idea,
+                "description": project.description or project.idea,
+                "functional_requirements": project.functional_requirements,
+                "non_functional_requirements": project.non_functional_requirements,
+                "constraints": project.constraints,
                 "status": project.status,
+                "plan_status": project.plan_status or "draft",
+                "repo_full_name": project.repo_full_name,
                 "repo_url": project.repo_url,
+                "telegram_chat_id": project.telegram_chat_id or project.telegram_group_id,
+                "telegram_status": project.telegram_status or "disconnected",
+                "lead_member_id": project.lead_member_id,
                 "starts_at": project.starts_at.isoformat() if project.starts_at else None,
                 "ends_at": project.ends_at.isoformat() if project.ends_at else None,
+                "created_at": project.created_at.isoformat() if project.created_at else None,
             },
             "members": members_data,
             "blocks": blocks_data,

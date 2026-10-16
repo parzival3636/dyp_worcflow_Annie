@@ -833,23 +833,34 @@ async def cmd_linkgroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chat = update.effective_chat
     if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
-        await update.message.reply_text("Run this command inside a Telegram group.")
+        await update.message.reply_text("Run this command inside your team Telegram group.")
         return
 
     if not context.args:
-        await update.message.reply_text("Usage: `/linkgroup <project_code>`",
+        await update.message.reply_text("Usage: `/link <project_code>`",
                                          parse_mode=ParseMode.MARKDOWN)
         return
 
-    code = context.args[0]
+    code = context.args[0].strip()
 
     def _link():
         with get_session() as session:
             project = _find_project_by_code(session, code)
             if not project:
-                return "Project not found. Check the code."
+                return "❌ Project not found. Please verify your 6-character project code."
             project.telegram_group_id = chat.id
+            project.telegram_chat_id = chat.id
+            project.telegram_status = "connected"
             session.add(project)
+
+            # Record event
+            event = Event(
+                project_id=project.id,
+                ts=datetime.now(timezone.utc),
+                type="telegram_connected",
+                payload={"chat_id": chat.id, "chat_title": chat.title or "Telegram Group"},
+            )
+            session.add(event)
             return None
 
     error = await asyncio.to_thread(_link)
@@ -858,9 +869,65 @@ async def cmd_linkgroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     await update.message.reply_text(
-        "✅ Group linked! I'll read this chat to track project progress.\n"
-        "Normal chat is fine — I only act on work updates. 🤖"
+        f"✅ *Group linked to project `{code}`!*\n\n"
+        "Pilot is now actively monitoring this chat for team progress, blockers, and task updates.\n\n"
+        "💡 *Tip for members:* If your Telegram account isn't matched yet, type `/iam <your-email>` to bind your work automatically.",
+        parse_mode=ParseMode.MARKDOWN
     )
+
+
+@safe
+async def cmd_iam(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Allow members to associate their Telegram account with their email/member record."""
+    if not update.message or not update.effective_user:
+        return
+
+    chat = update.effective_chat
+    tg_user = update.effective_user
+
+    if not context.args:
+        await update.message.reply_text("Usage: `/iam <your_email@example.com>`", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    email = context.args[0].strip().lower()
+
+    def _bind():
+        with get_session() as session:
+            project, _ = _resolve_context(session, update)
+            if not project:
+                return "❌ No project linked to this chat. Run `/link <project_code>` first."
+
+            member = session.exec(
+                select(Member).where(
+                    Member.project_id == project.id,
+                    (Member.email == email) | (Member.name.ilike(f"%{email.split('@')[0]}%"))
+                )
+            ).first()
+
+            if not member:
+                # If no matching member, find unlinked member or create one
+                member = Member(
+                    project_id=project.id,
+                    name=tg_user.full_name or email.split('@')[0],
+                    email=email,
+                    telegram_id=tg_user.id,
+                    telegram_username=tg_user.username,
+                    role="member",
+                    invite_status="accepted",
+                    onboarding_state="done",
+                )
+                session.add(member)
+            else:
+                member.telegram_id = tg_user.id
+                member.telegram_username = tg_user.username
+                if not member.email:
+                    member.email = email
+                session.add(member)
+
+            return f"✅ Linked *{tg_user.full_name}* ({email}) as a team member on *{project.name}*!"
+
+    result_text = await asyncio.to_thread(_bind)
+    await update.message.reply_text(result_text, parse_mode=ParseMode.MARKDOWN)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1187,6 +1254,8 @@ async def start_bot():
         _bot_app.add_handler(CommandHandler("record", cmd_record))
         _bot_app.add_handler(CommandHandler("followup", cmd_followup))
         _bot_app.add_handler(CommandHandler("linkgroup", cmd_linkgroup))
+        _bot_app.add_handler(CommandHandler("link", cmd_linkgroup))
+        _bot_app.add_handler(CommandHandler("iam", cmd_iam))
         _bot_app.add_handler(CommandHandler("join", cmd_join))
 
         _bot_app.add_handler(CallbackQueryHandler(callback_handler))

@@ -1,6 +1,15 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './context/AuthContext';
+
 import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import ProjectListPage from './pages/ProjectListPage';
+import CreateProjectPage from './pages/CreateProjectPage';
+import ProjectSetupPage from './pages/ProjectSetupPage';
+import InviteAcceptPage from './pages/InviteAcceptPage';
+
 import ProjectShell from './pages/ProjectShell';
 import Board from './pages/Board';
 import Overview from './pages/Overview';
@@ -21,7 +30,7 @@ import AnnieWebhookLogPage from './pages/AnnieWebhookLogPage';
 
 export default function App() {
   return (
-    <>
+    <AuthProvider>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -35,6 +44,11 @@ export default function App() {
       />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/projects" element={<ProjectListPage />} />
+        <Route path="/projects/new" element={<CreateProjectPage />} />
+        <Route path="/invite/:token" element={<InviteAcceptPage />} />
 
         {/* Global Annie Routes */}
         <Route path="/annie" element={<AnnieDashboardPage />} />
@@ -47,6 +61,7 @@ export default function App() {
         <Route path="/tasks" element={<AnnieTasksPage />} />
         <Route path="/webhooks" element={<AnnieWebhookLogPage />} />
 
+        {/* Dynamic Project Workspace */}
         <Route path="/p/:code" element={<ProjectShell />}>
           {/* Team Member Collaborative Workspace */}
           <Route index element={<Board />} />
@@ -58,21 +73,21 @@ export default function App() {
           <Route path="activity" element={<Activity />} />
           <Route path="chat" element={<GuideChat />} />
 
-          {/* Dedicated Leader Portal */}
+          {/* Dedicated Leader Portal & Project Setup */}
           <Route path="lead" element={<LeaderPortal />} />
+          <Route path="setup" element={<ProjectSetupPage />} />
 
           {/* Dedicated Guide / Evaluator Overview */}
           <Route path="guide" element={<GuideOverview />} />
 
           {/* Annie Verification & GitHub CI within Project */}
           <Route path="annie" element={<AnnieDashboardPage />} />
-          <Route path="setup" element={<AnnieSetupPage />} />
           <Route path="verify" element={<AnnieTasksPage />} />
           <Route path="webhooks" element={<AnnieWebhookLogPage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/projects" replace />} />
       </Routes>
-    </>
+    </AuthProvider>
   );
 }

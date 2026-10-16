@@ -32,6 +32,7 @@ function hashStr(str) {
 export async function apiFetch(path, options = {}) {
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
@@ -81,19 +82,8 @@ export function useSnapshot(code) {
       setSnapshot(data);
       setError(null);
     } catch (e) {
-      // In development or when backend is starting, provide rich demo snapshot
-      const fallback = getDemoSnapshot(code);
-      if (fallback) {
-        if (prevRef.current) {
-          const d = computeDiff(prevRef.current, fallback);
-          if (d) setDiff(d);
-        }
-        prevRef.current = fallback;
-        setSnapshot(fallback);
-        setError(null);
-      } else {
-        setError(e);
-      }
+      // Real database / API error - never mask with fake mock data
+      setError(e);
     } finally {
       setLoading(false);
     }
