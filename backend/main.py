@@ -107,10 +107,13 @@ async def lifespan(app: FastAPI):
         if str(transcribe_dir) not in sys.path:
             sys.path.insert(0, str(transcribe_dir))
         from app.db import init_db as init_transcribe_db
-        init_transcribe_db()
-        logger.info("Transcribe database tables initialized")
+        try:
+            await asyncio.wait_for(asyncio.to_thread(init_transcribe_db), timeout=5.0)
+            logger.info("Transcribe database tables initialized")
+        except (asyncio.TimeoutError, Exception) as db_err:
+            logger.warning("Could not initialize transcribe DB: %s", db_err)
     except Exception as exc:
-        logger.warning("Could not initialize transcribe DB: %s", exc)
+        logger.warning("Could not load transcribe module: %s", exc)
 
     # Import and start bot
     from bot import start_bot, stop_bot
@@ -225,6 +228,16 @@ try:
     logger.info("Mounted transcribe API endpoints under /api/v1/transcribe and /api/transcribe")
 except Exception as exc:
     logger.warning("Could not mount transcribe routers: %s", exc)
+
+
+@app.get("/")
+async def root():
+    return JSONResponse({
+        "status": "online",
+        "app": "Pilot & Annie Backend",
+        "docs": "/docs",
+        "health": "/api/health",
+    })
 
 
 @app.get("/api/health")
