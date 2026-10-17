@@ -372,48 +372,10 @@ def propose_split(session: Session, block_id: int) -> dict[str, Any]:
     }
 
 
-
-# ── Skill-domain keyword map ────────────────────────────────────────────────
-# Maps each canonical skill slug to a set of keywords to match against task text.
-SKILL_KEYWORDS: dict[str, list[str]] = {
-    "frontend":   ["ui", "frontend", "front-end", "react", "css", "html", "component",
-                   "page", "form", "dashboard", "design", "interface", "view", "style",
-                   "button", "layout", "navbar", "modal", "responsive"],
-    "backend":    ["api", "backend", "back-end", "server", "endpoint", "route", "rest",
-                   "auth", "database", "db", "model", "schema", "migration", "orm",
-                   "crud", "service", "controller", "middleware"],
-    "devops":     ["devops", "deploy", "deployment", "ci", "cd", "pipeline", "docker",
-                   "kubernetes", "k8s", "infra", "infrastructure", "server", "nginx",
-                   "cloud", "aws", "gcp", "azure", "monitor", "logging", "git"],
-    "ml":         ["ml", "machine learning", "model", "train", "inference", "predict",
-                   "dataset", "feature", "neural", "nlp", "deep learning", "pytorch",
-                   "tensorflow", "sklearn", "embedding", "classification", "regression"],
-    "agentic_ai": ["agent", "agentic", "llm", "gpt", "openai", "langchain", "prompt",
-                   "rag", "retrieval", "chain", "tool", "planner", "reasoning",
-                   "autonomous", "workflow", "orchestrat"],
-    "security":   ["security", "auth", "authentication", "authoriz", "oauth", "jwt",
-                   "token", "encrypt", "hash", "vulnerab", "pentest", "sanitiz",
-                   "xss", "csrf", "injection", "permission", "role", "rbac"],
-}
-
-
-def _classify_task_domain(text: str) -> str | None:
-    """Return the best-matching skill slug for a piece of task text, or None."""
-    text_lower = text.lower()
-    best_skill: str | None = None
-    best_score: int = 0
-    for skill, keywords in SKILL_KEYWORDS.items():
-        score = sum(1 for kw in keywords if kw in text_lower)
-        if score > best_score:
-            best_score = score
-            best_skill = skill
-    return best_skill if best_score > 0 else None
-
-
-def _member_skill_set(member) -> set[str]:
-    """Return parsed skills set from a member's skills string."""
-    raw = getattr(member, "skills", None) or ""
-    return {s.strip().lower() for s in raw.split(",") if s.strip()}
+def token_overlap(text1: str, text2: str) -> int:
+    words1 = set(re.findall(r"\w+", (text1 or "").lower()))
+    words2 = set(re.findall(r"\w+", (text2 or "").lower()))
+    return len(words1.intersection(words2))
 
 
 def assign(session: Session, project_id: int) -> dict[str, Any]:
@@ -498,9 +460,6 @@ def assign(session: Session, project_id: int) -> dict[str, Any]:
 
     sorted_blocks = sorted(blocks, key=lambda b: (b.total_effort or 0, -(b.id or 0)), reverse=True)
 
-    # Pre-compute member skill sets
-    member_skills: dict[int, set[str]] = {m.id: _member_skill_set(m) for m in members}
-
     for b in sorted_blocks:
         b_effort = b.total_effort or 0
         if b_effort > 1.4 * fair_share:
@@ -511,21 +470,16 @@ def assign(session: Session, project_id: int) -> dict[str, Any]:
         else:
             b.oversize_flag = False
 
-        # Classify block domain from combined task text
-        block_text = f"{b.name} " + " ".join(
-            f"{t.title} {t.description or ''}" for t in task_by_block[b.id]
+        block_text = f"{b.name} " + " ".join(f"{t.title} {t.description or ''}" for t in task_by_block[b.id])
+
+        best_member = min(
+            members,
+            key=lambda m: (
+                member_loads[m.id],
+                -token_overlap(block_text, getattr(m, "skills", None) or getattr(m, "role", None) or ""),
+                m.id,
+            ),
         )
-        block_domain = _classify_task_domain(block_text)
-
-        # Skill-aware assignment:
-        # Primary sort key: member has matching skill (1 = yes, prefer these)
-        # Secondary sort key: least workload (fair distribution)
-        # Tertiary: member id (stable tie-break)
-        def _sort_key(m):
-            skill_match = 1 if (block_domain and block_domain in member_skills[m.id]) else 0
-            return (-skill_match, member_loads[m.id], m.id)
-
-        best_member = min(members, key=_sort_key)
 
         b.owner_member_id = best_member.id
         member_loads[best_member.id] += b_effort
@@ -547,8 +501,6 @@ def assign(session: Session, project_id: int) -> dict[str, Any]:
         "loads": member_loads,
         "oversize_warnings": oversize_warnings,
     }
-
-
 
 
 def confirm_assignment(session: Session, project_id: int) -> dict[str, Any]:

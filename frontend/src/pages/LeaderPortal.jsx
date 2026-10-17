@@ -46,27 +46,7 @@ export default function LeaderPortal() {
   const [collabGithub, setCollabGithub] = useState('');
   const [collabTelegram, setCollabTelegram] = useState('');
   const [collabRole, setCollabRole] = useState('member');
-  const [collabSkills, setCollabSkills] = useState([]);
   const [addingCollab, setAddingCollab] = useState(false);
-
-  const SKILL_OPTIONS = [
-    { value: 'frontend',   label: '🎨 Frontend' },
-    { value: 'backend',    label: '⚙️ Backend' },
-    { value: 'devops',     label: '🚀 DevOps / Deploy' },
-    { value: 'ml',         label: '🤖 ML' },
-    { value: 'agentic_ai', label: '🧠 Agentic AI' },
-    { value: 'security',   label: '🔒 Security' },
-  ];
-
-  const toggleSkill = (val) => {
-    setCollabSkills(prev =>
-      prev.includes(val)
-        ? prev.filter(s => s !== val)
-        : prev.length < 2
-          ? [...prev, val]
-          : prev   // already at max 2, ignore
-    );
-  };
 
   // Kickoff / Follow-up loading
   const [actionLoading, setActionLoading] = useState(null);
@@ -208,13 +188,11 @@ export default function LeaderPortal() {
         github_login: collabGithub.trim(),
         telegram_username: collabTelegram.trim().replace(/^@/, ''),
         role: collabRole,
-        skills: collabSkills,
       });
       addToast(`Collaborator ${collabName} added! Invites generated.`, 'green');
       setCollabName('');
       setCollabGithub('');
       setCollabTelegram('');
-      setCollabSkills([]);
       if (refetch) refetch();
     } catch {
       addToast(`Collaborator ${collabName} added to project!`, 'green');
@@ -777,26 +755,6 @@ export default function LeaderPortal() {
                   </button>
                 </div>
               </div>
-
-              {/* Skills selector */}
-              <div className="form-group" style={{ marginTop: '0.5rem' }}>
-                <label style={{ marginBottom: '0.4rem', display: 'block' }}>
-                  Skills <span style={{ color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.8em' }}>(pick up to 2)</span>
-                </label>
-                <div className="skill-chips">
-                  {SKILL_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      className={`skill-chip${collabSkills.includes(opt.value) ? ' selected' : ''}${!collabSkills.includes(opt.value) && collabSkills.length >= 2 ? ' disabled' : ''}`}
-                      onClick={() => toggleSkill(opt.value)}
-                      disabled={!collabSkills.includes(opt.value) && collabSkills.length >= 2}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </form>
 
             {/* Collaborators List */}
@@ -805,7 +763,6 @@ export default function LeaderPortal() {
                 <thead>
                   <tr>
                     <th>Member</th>
-                    <th>Skills</th>
                     <th>Telegram</th>
                     <th>GitHub</th>
                     <th>Bot Status</th>
@@ -816,7 +773,6 @@ export default function LeaderPortal() {
                   {members.map(m => {
                     const color = getOwnerColor(m.id);
                     const isAccepted = m.invite_status === 'accepted';
-                    const skillLabels = { frontend: '🎨 FE', backend: '⚙️ BE', devops: '🚀 DevOps', ml: '🤖 ML', agentic_ai: '🧠 AI', security: '🔒 Sec' };
 
                     return (
                       <tr key={m.id}>
@@ -827,16 +783,6 @@ export default function LeaderPortal() {
                               <strong className="text-primary">{m.name}</strong>
                               {m.role === 'lead' && <span className="lead-tag">Lead</span>}
                             </div>
-                          </div>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                            {(m.skills || []).length > 0
-                              ? (m.skills).map(s => (
-                                  <span key={s} className="skill-badge">{skillLabels[s] || s}</span>
-                                ))
-                              : <span className="text-muted" style={{ fontSize: '0.78em' }}>—</span>
-                            }
                           </div>
                         </td>
                         <td>
