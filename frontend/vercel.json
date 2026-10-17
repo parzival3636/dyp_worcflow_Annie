@@ -1,6 +1,22 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://dypworcflowannie-production.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/repos/:path*",
+      "destination": "https://dypworcflowannie-production.up.railway.app/repos/:path*"
+    },
+    {
+      "source": "/tasks/:path*",
+      "destination": "https://dypworcflowannie-production.up.railway.app/tasks/:path*"
+    },
+    {
+      "source": "/dashboard/:path*",
+      "destination": "https://dypworcflowannie-production.up.railway.app/dashboard/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
