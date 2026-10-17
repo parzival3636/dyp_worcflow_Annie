@@ -533,6 +533,7 @@ def get_snapshot(code: str):
         members_data = [
             {
                 "id": m.id,
+                "user_id": m.user_id,
                 "name": m.name,
                 "email": m.email,
                 "role": m.role,
@@ -701,6 +702,7 @@ def get_snapshot(code: str):
                 "telegram_chat_id": project.telegram_chat_id or project.telegram_group_id,
                 "telegram_status": project.telegram_status or "disconnected",
                 "lead_member_id": project.lead_member_id,
+                "leader_user_id": project.leader_user_id,
                 "starts_at": project.starts_at.isoformat() if project.starts_at else None,
                 "ends_at": project.ends_at.isoformat() if project.ends_at else None,
                 "created_at": project.created_at.isoformat() if project.created_at else None,
