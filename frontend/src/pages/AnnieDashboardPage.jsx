@@ -65,7 +65,7 @@ export default function AnnieDashboardPage() {
   const team = stats?.team_stats || []
 
   return (
-    <div className="annie-container" style={{ minHeight: '100%', background: 'var(--bg, #F8F9FA)' }}>
+    <div className="annie-container" style={{ minHeight: '100vh', background: 'var(--bg, #F8F9FA)' }}>
       <AnnieNav />
 
       {loading ? (

@@ -2,9 +2,6 @@
 
 .annie-container {
   min-height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
   background: var(--bg, #F8F9FA);
   color: var(--text-primary, #0F172A);
   font-family: var(--font-sans, 'Geist Sans', -apple-system, BlinkMacSystemFont, sans-serif);

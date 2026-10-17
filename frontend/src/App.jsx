@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
-import { initCapacitor } from './lib/capacitor';
 
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -31,12 +29,6 @@ import AnnieTasksPage from './pages/AnnieTasksPage';
 import AnnieWebhookLogPage from './pages/AnnieWebhookLogPage';
 
 export default function App() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    initCapacitor(navigate);
-  }, [navigate]);
-
   return (
     <AuthProvider>
       <Toaster
