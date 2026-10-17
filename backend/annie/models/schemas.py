@@ -21,6 +21,7 @@ class CollaboratorStatus(BaseModel):
 class RepoResponse(BaseModel):
     repo_name: str
     repo_url: str
+    full_name: Optional[str] = None
     collaborators: list[CollaboratorStatus]
 
 

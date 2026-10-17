@@ -126,26 +126,65 @@ async def handle_group_message(update: Update, context: ContextTypes.DEFAULT_TYP
                 return None, None, []
 
             # Map sender to member
-            member = session.exec(
+            member_matches = session.exec(
                 select(Member).where(
                     Member.project_id == project.id,
                     Member.telegram_id == tg_user.id,
                 )
-            ).first()
+            ).all()
+
+            if member_matches:
+                # If multiple members share this telegram_id, pick the one with tasks assigned
+                member = member_matches[0]
+                for m in member_matches:
+                    has_tasks = session.exec(
+                        select(Task).where(Task.project_id == project.id, Task.owner_member_id == m.id)
+                    ).first()
+                    if has_tasks:
+                        member = m
+                        break
+            else:
+                member = None
 
             if not member and not tg_user.is_bot:
-                # Auto-enroll member chatting in the linked project group!
-                member = Member(
-                    project_id=project.id,
-                    name=tg_user.full_name,
-                    telegram_id=tg_user.id,
-                    telegram_username=tg_user.username,
-                    role="member",
-                    invite_status="accepted",
-                    onboarding_state="done",
-                )
-                session.add(member)
-                session.flush()
+                # Check first if a member exists with matching telegram username, name, or email before creating duplicate
+                candidates = session.exec(
+                    select(Member).where(Member.project_id == project.id)
+                ).all()
+                matched_candidate = None
+                tg_uname = (tg_user.username or "").lower()
+                tg_fname = (tg_user.full_name or "").lower()
+                for c in candidates:
+                    c_uname = (c.telegram_username or "").lower()
+                    c_name = (c.name or "").lower()
+                    c_email = (c.email or "").lower()
+                    if tg_uname and (c_uname == tg_uname or c_name == tg_uname or tg_uname in c_email):
+                        matched_candidate = c
+                        break
+                    if tg_fname and (c_name in tg_fname or tg_fname in c_name):
+                        matched_candidate = c
+                        break
+
+                if matched_candidate:
+                    matched_candidate.telegram_id = tg_user.id
+                    if tg_user.username:
+                        matched_candidate.telegram_username = tg_user.username
+                    session.add(matched_candidate)
+                    session.flush()
+                    member = matched_candidate
+                else:
+                    # Auto-enroll member chatting in the linked project group!
+                    member = Member(
+                        project_id=project.id,
+                        name=tg_user.full_name,
+                        telegram_id=tg_user.id,
+                        telegram_username=tg_user.username,
+                        role="member",
+                        invite_status="accepted",
+                        onboarding_state="done",
+                    )
+                    session.add(member)
+                    session.flush()
 
             # Get all member names for cheap filter
             members = session.exec(

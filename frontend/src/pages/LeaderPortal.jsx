@@ -160,7 +160,7 @@ export default function LeaderPortal() {
       if (res.data.repo_url) {
         await apiPatch(`/projects/${code}`, {
           repo_url: res.data.repo_url,
-          repo_full_name: `${res.data.repo_name}`,
+          repo_full_name: res.data.full_name || `${res.data.repo_name}`,
         });
         setRepoUrl(res.data.repo_url);
         setRepoName(res.data.repo_name);

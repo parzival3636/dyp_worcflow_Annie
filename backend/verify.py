@@ -37,6 +37,11 @@ async def _fetch_repo_commits(
     if not repo_full_name or not github_token:
         return []
 
+    settings = get_settings()
+    owner = settings.github_owner or getattr(settings, "github_username", "")
+    if "/" not in repo_full_name and owner:
+        repo_full_name = f"{owner}/{repo_full_name}"
+
     url = f"https://api.github.com/repos/{repo_full_name}/commits"
     headers = {
         "Authorization": f"Bearer {github_token}",
@@ -260,37 +265,49 @@ async def verify_task(task_id: int) -> Dict[str, Any]:
         if not project:
             return {"verdict": "no_evidence", "confidence": 0.0, "reason": "Project not found"}
 
-        members = session.exec(select(Member).where(Member.project_id == project.id)).all()
-        owner = session.get(Member, task.owner_member_id) if task.owner_member_id else None
+        proj_id = project.id
+        repo_name = project.repo_full_name
+        chat_id = project.telegram_chat_id or project.telegram_group_id
+        task_key = task.key
+        task_title = task.title or ""
+        task_desc = task.description or ""
+        task_criteria = task.acceptance_criteria or []
+        task_started_at = task.started_at
+        task_owner_id = task.owner_member_id
+
+        members = session.exec(select(Member).where(Member.project_id == proj_id)).all()
+        members_list = [Member.model_validate(m) for m in members]
+        owner = session.get(Member, task_owner_id) if task_owner_id else None
+        owner_id = owner.id if owner else None
 
     # Step 1: Fetch commits from GitHub if repo is configured
-    repo_name = project.repo_full_name
     github_token = settings.github_token
     matched_commits = []
 
     if repo_name and github_token:
         raw_commits = await _fetch_repo_commits(repo_name, github_token, limit=40)
         with get_session() as session:
-            all_commits = _sync_commits_to_db(session, project.id, raw_commits, members)
+            all_commits_db = _sync_commits_to_db(session, proj_id, raw_commits, members_list)
             session.commit()
+            all_commits = [CommitLog.model_validate(c) for c in all_commits_db]
 
         # Step 2: Match candidate commits for this task
-        key_pattern = re.compile(rf"\b{re.escape(task.key)}\b", re.IGNORECASE)
+        key_pattern = re.compile(rf"\b{re.escape(task_key)}\b", re.IGNORECASE)
         for c in all_commits:
             # Check commit message for key
             if key_pattern.search(c.message or ""):
                 matched_commits.append(c)
             # Or if authored by owner and committed recently
-            elif owner and c.member_id == owner.id and task.started_at:
-                if c.committed_at and c.committed_at >= task.started_at:
+            elif owner_id and c.member_id == owner_id and task_started_at:
+                if c.committed_at and c.committed_at >= task_started_at:
                     matched_commits.append(c)
     else:
         # Check DB commit_log
         with get_session() as session:
-            key_pattern_str = f"%{task.key}%"
+            key_pattern_str = f"%{task_key}%"
             matched_commits = session.exec(
                 select(CommitLog).where(
-                    CommitLog.project_id == project.id,
+                    CommitLog.project_id == proj_id,
                     CommitLog.message.ilike(key_pattern_str),
                 )
             ).all()
@@ -315,10 +332,10 @@ async def verify_task(task_id: int) -> Dict[str, Any]:
 
         # Run AI verification
         ai_res = await _run_ai_verification(
-            task_key=task.key,
-            task_title=task.title or "",
-            task_desc=task.description or "",
-            criteria=task.acceptance_criteria or [],
+            task_key=task_key,
+            task_title=task_title,
+            task_desc=task_desc,
+            criteria=task_criteria,
             sha=best_commit.sha,
             commit_msg=best_commit.message or "",
             diff=diff_text,
@@ -338,16 +355,21 @@ async def verify_task(task_id: int) -> Dict[str, Any]:
 
     # Step 4: Update task status in DB with transaction
     with get_session() as session:
-        t = session.get(Task, task.id)
+        t = session.get(Task, task_id)
         if t:
             old_status = t.status
             target_status = "verified_done" if verdict_str == "verified_done" else "needs_review"
 
             try:
+                if t.status in ("todo", "in_progress"):
+                    t.status = "claimed_done"
+                    session.add(t)
+                    session.flush()
+
                 transition_task(
                     session=session,
                     task_key=t.key,
-                    project_id=project.id,
+                    project_id=proj_id,
                     new_status=target_status,
                     actor_member_id=t.owner_member_id,
                     reason=reason,
@@ -355,7 +377,7 @@ async def verify_task(task_id: int) -> Dict[str, Any]:
                     extra={"verdict": "verified" if target_status == "verified_done" else "partial", "confidence": confidence},
                 )
             except IllegalTransition:
-                # If transition from current state is not allowed directly (e.g. from in_progress)
+                # If transition from current state is not allowed directly
                 t.status = target_status
                 if target_status == "verified_done":
                     t.progress = 100
@@ -374,9 +396,27 @@ async def verify_task(task_id: int) -> Dict[str, Any]:
             v.completed_at = now
             session.add(v)
 
+            # Auto-resolve any contradictions related to this verified task
+            try:
+                from models import Contradiction
+                open_c = session.exec(
+                    select(Contradiction).where(
+                        Contradiction.project_id == proj_id,
+                        Contradiction.status == "open",
+                    )
+                ).all()
+                for c in open_c:
+                    tids = [str(x) for x in (c.task_ids or [])]
+                    if str(t.id) in tids or t.key.lower() in (c.summary or "").lower():
+                        c.status = "resolved"
+                        c.resolved_at = now
+                        session.add(c)
+            except Exception:
+                pass
+
             # Record event
             event = Event(
-                project_id=project.id,
+                project_id=proj_id,
                 ts=now,
                 type="task_verified",
                 task_id=t.id,
@@ -393,7 +433,6 @@ async def verify_task(task_id: int) -> Dict[str, Any]:
             session.commit()
 
     # Step 5: Post notification to Telegram group if connected
-    chat_id = project.telegram_chat_id or project.telegram_group_id
     if chat_id:
         try:
             from bot import _bot_app
@@ -435,25 +474,26 @@ async def run_github_poll_tick():
         return
 
     try:
+        projects_to_poll = []
         with get_session() as session:
-            active_projects = session.exec(
-                select(Project).where(
+            rows = session.exec(
+                select(Project.id, Project.repo_full_name).where(
                     Project.status.in_(["planning", "running"]),
                     Project.repo_full_name.is_not(None),
                 )
             ).all()
+            for pid, rname in rows:
+                if pid and rname:
+                    projects_to_poll.append((pid, rname))
 
-        for proj in active_projects:
-            if not proj.repo_full_name:
-                continue
-
-            raw_commits = await _fetch_repo_commits(proj.repo_full_name, settings.github_token, limit=20)
+        for proj_id, repo_full_name in projects_to_poll:
+            raw_commits = await _fetch_repo_commits(repo_full_name, settings.github_token, limit=20)
             if not raw_commits:
                 continue
 
             with get_session() as session:
-                members = session.exec(select(Member).where(Member.project_id == proj.id)).all()
-                upserted = _sync_commits_to_db(session, proj.id, raw_commits, members)
+                members = session.exec(select(Member).where(Member.project_id == proj_id)).all()
+                upserted = _sync_commits_to_db(session, proj_id, raw_commits, members)
                 session.commit()
 
                 # Find any tasks referenced in newly fetched commits
@@ -463,9 +503,9 @@ async def run_github_poll_tick():
                     keys = key_re.findall(c.message or "")
                     for k in keys:
                         t = session.exec(
-                            select(Task).where(Task.project_id == proj.id, Task.key == k.upper())
+                            select(Task).where(Task.project_id == proj_id, Task.key == k.upper())
                         ).first()
-                        if t and t.status in ("claimed_done", "in_progress", "needs_review"):
+                        if t and t.status in ("todo", "claimed_done", "in_progress", "needs_review"):
                             tasks_to_verify.add(t.id)
 
             for tid in tasks_to_verify:

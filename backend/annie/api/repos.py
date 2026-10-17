@@ -66,6 +66,7 @@ async def create_repo(payload: CreateRepoRequest):
     return RepoResponse(
         repo_name=repo_info["repo_name"],
         repo_url=repo_info["repo_url"],
+        full_name=full_name,
         collaborators=collab_statuses,
     )
 

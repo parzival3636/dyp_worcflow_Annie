@@ -772,7 +772,17 @@ async def _apply_single_observation(project: Project, obs: Observation) -> str |
                 return None
 
             # Only the task owner's own messages change status
-            if task.owner_member_id != member.id:
+            is_owner = (task.owner_member_id == member.id)
+            if not is_owner and task.owner_member_id:
+                task_owner = session.get(Member, task.owner_member_id)
+                if task_owner:
+                    if (task_owner.telegram_id and member.telegram_id and task_owner.telegram_id == member.telegram_id) or \
+                       (task_owner.telegram_username and member.telegram_username and task_owner.telegram_username.lower() == member.telegram_username.lower()) or \
+                       (task_owner.name and member.name and (task_owner.name.lower() in member.name.lower() or member.name.lower() in task_owner.name.lower())):
+                        is_owner = True
+                        member = task_owner  # bind to the actual task owner
+
+            if not is_owner:
                 stubs.check_contradictions(project.id, task.id)
                 return None
 
@@ -841,6 +851,23 @@ async def _apply_single_observation(project: Project, obs: Observation) -> str |
                     ob.resolved_at = datetime.now(timezone.utc)
                     session.add(ob)
 
+                # Auto-resolve any false contradictions for this task
+                try:
+                    open_contradictions = session.exec(
+                        select(Contradiction).where(
+                            Contradiction.project_id == project.id,
+                            Contradiction.status == "open",
+                        )
+                    ).all()
+                    for oc in open_contradictions:
+                        tids_str = [str(x) for x in (oc.task_ids or [])]
+                        if str(task.id) in tids_str or task.key.lower() in (oc.summary or "").lower():
+                            oc.status = "resolved"
+                            oc.resolved_at = datetime.now(timezone.utc)
+                            session.add(oc)
+                except Exception:
+                    pass
+
                 try:
                     if task.status == "todo":
                         transition(session, task, "in_progress", member.id,
@@ -851,7 +878,8 @@ async def _apply_single_observation(project: Project, obs: Observation) -> str |
                     transition(session, task, "claimed_done", member.id,
                                reason=obs.evidence_quote, from_chat=True)
                 except TransitionError:
-                    pass
+                    task.status = "claimed_done"
+                    session.add(task)
 
                 task.progress = 100
                 session.add(task)
