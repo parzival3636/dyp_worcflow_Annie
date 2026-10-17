@@ -70,3 +70,5 @@
 {"ts": "2026-10-17T00:28:38.892625+00:00", "model": "qwen2.5:7b", "latency_s": 10.063, "system_prompt_len": 1269, "user_prompt_len": 270, "raw_response": null, "error": "Network error: timed out"}
 {"ts": "2026-10-17T00:50:09.246696+00:00", "model": "qwen2.5:7b", "latency_s": 10.062, "system_prompt_len": 4256, "user_prompt_len": 1068, "raw_response": null, "error": "Network error: timed out"}
 {"ts": "2026-10-17T00:50:22.171306+00:00", "model": "qwen2.5:7b", "latency_s": 10.078, "system_prompt_len": 1269, "user_prompt_len": 298, "raw_response": null, "error": "Network error: timed out"}
+{"ts": "2026-10-17T09:26:38.852199+00:00", "model": "qwen2.5:7b", "latency_s": 10.063, "system_prompt_len": 1936, "user_prompt_len": 489, "raw_response": null, "error": "Network error: timed out"}
+{"ts": "2026-10-17T09:59:11.652059+00:00", "model": "qwen2.5:7b", "latency_s": 10.078, "system_prompt_len": 1936, "user_prompt_len": 489, "raw_response": null, "error": "Network error: timed out"}

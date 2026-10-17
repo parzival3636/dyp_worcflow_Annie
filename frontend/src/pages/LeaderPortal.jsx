@@ -43,17 +43,21 @@ export default function LeaderPortal() {
 
   // Form states: Add collaborator
   const [collabName, setCollabName] = useState('');
+  const [collabEmail, setCollabEmail] = useState('');
   const [collabGithub, setCollabGithub] = useState('');
   const [collabTelegram, setCollabTelegram] = useState('');
   const [collabRole, setCollabRole] = useState('member');
   const [addingCollab, setAddingCollab] = useState(false);
+  const [copiedMemberId, setCopiedMemberId] = useState(null);
 
   // Kickoff / Follow-up loading
   const [actionLoading, setActionLoading] = useState(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const telegramBotUsername = "PilotCoordinatorBot";
+  const telegramBotUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || "Anniedyp_bot";
   const botJoinLink = `https://t.me/${telegramBotUsername}?start=join_${code}`;
+  const repoFullName = project.repo_full_name || (project.repo_url ? extractRepoName(project.repo_url) : '');
+  const repoInvitationsUrl = repoFullName ? `https://github.com/${repoFullName}/invitations` : '';
 
   // Copy bot link
   const handleCopyLink = () => {
@@ -176,7 +180,7 @@ export default function LeaderPortal() {
     }
   };
 
-  // Add collaborator with Telegram and GitHub
+  // Add collaborator with Telegram, GitHub, and optional Email
   const handleAddCollaborator = async (e) => {
     e.preventDefault();
     if (!collabName.trim()) return;
@@ -185,12 +189,14 @@ export default function LeaderPortal() {
     try {
       await apiPost(`/projects/${code}/members`, {
         name: collabName.trim(),
-        github_login: collabGithub.trim(),
+        email: collabEmail.trim() || undefined,
+        github_login: collabGithub.trim().replace(/^@/, ''),
         telegram_username: collabTelegram.trim().replace(/^@/, ''),
         role: collabRole,
       });
-      addToast(`Collaborator ${collabName} added! Invites generated.`, 'green');
+      addToast(`Collaborator ${collabName} added! Invite link generated.`, 'green');
       setCollabName('');
+      setCollabEmail('');
       setCollabGithub('');
       setCollabTelegram('');
       if (refetch) refetch();
@@ -198,6 +204,44 @@ export default function LeaderPortal() {
       addToast(`Collaborator ${collabName} added to project!`, 'green');
     } finally {
       setAddingCollab(false);
+    }
+  };
+
+  // Quick link or update GitHub username directly & auto-invite to GitHub repo
+  const handleQuickLinkGithub = async (member) => {
+    const handle = window.prompt(`Enter GitHub username for ${member.name}:`, member.github_login || '');
+    if (handle === null) return;
+    const cleanHandle = handle.trim().replace(/^@/, '');
+    if (!cleanHandle) return;
+    try {
+      const res = await apiPatch(`/projects/${code}/members/${member.id}`, {
+        github_login: cleanHandle
+      });
+
+      if (res?.invitation_url) {
+        addToast(`🚀 Collaboration invite sent to @${cleanHandle}! Teammate can accept at: ${res.invitation_url}`, 'green');
+      } else {
+        addToast(`Linked @${cleanHandle} to ${member.name}!`, 'green');
+      }
+      if (refetch) refetch();
+    } catch {
+      addToast('Failed to update GitHub username or send invite', 'red');
+    }
+  };
+
+  // Re-trigger GitHub collaboration invite
+  const handleInviteToGithub = async (member) => {
+    if (!member.github_login) {
+      handleQuickLinkGithub(member);
+      return;
+    }
+    try {
+      const res = await apiPost(`/projects/${code}/members/${member.id}/invite-github`);
+      addToast(`🚀 GitHub collaborator invitation sent to @${member.github_login}! Accept at: ${res.invitation_url}`, 'green');
+      if (refetch) refetch();
+    } catch (err) {
+      const msg = err?.body?.detail || err?.message || 'Failed to send GitHub repository invite';
+      addToast(msg, 'red');
     }
   };
 
@@ -711,6 +755,18 @@ export default function LeaderPortal() {
                 </div>
 
                 <div className="form-group flex-1">
+                  <label>Email (send invite link to email)</label>
+                  <input
+                    type="email"
+                    placeholder="e.g. teammate@example.com"
+                    value={collabEmail}
+                    onChange={(e) => setCollabEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group flex-1">
                   <label>Telegram Phone / Handle *</label>
                   <input
                     type="text"
@@ -720,11 +776,9 @@ export default function LeaderPortal() {
                     onChange={(e) => setCollabTelegram(e.target.value)}
                   />
                 </div>
-              </div>
 
-              <div className="form-row">
                 <div className="form-group flex-1">
-                  <label>GitHub Username (for repo invite)</label>
+                  <label>GitHub Username (optional)</label>
                   <input
                     type="text"
                     placeholder="e.g. aarav-code"
@@ -765,6 +819,7 @@ export default function LeaderPortal() {
                     <th>Member</th>
                     <th>Telegram</th>
                     <th>GitHub</th>
+                    <th>Verify / Invite Link</th>
                     <th>Bot Status</th>
                     <th style={{ textAlign: 'right' }}>Action</th>
                   </tr>
@@ -773,6 +828,8 @@ export default function LeaderPortal() {
                   {members.map(m => {
                     const color = getOwnerColor(m.id);
                     const isAccepted = m.invite_status === 'accepted';
+                    const inviteToken = m.invite_token;
+                    const inviteUrl = inviteToken ? `${window.location.origin}/invite/${inviteToken}` : '';
 
                     return (
                       <tr key={m.id}>
@@ -782,6 +839,7 @@ export default function LeaderPortal() {
                             <div>
                               <strong className="text-primary">{m.name}</strong>
                               {m.role === 'lead' && <span className="lead-tag">Lead</span>}
+                              {m.email && <div style={{ fontSize: 10, color: 'var(--text-muted, #64748B)' }}>{m.email}</div>}
                             </div>
                           </div>
                         </td>
@@ -791,9 +849,114 @@ export default function LeaderPortal() {
                           </span>
                         </td>
                         <td>
-                          <span className="font-mono text-xs text-muted">
-                            {m.github_login ? `@${m.github_login}` : '—'}
-                          </span>
+                          {m.github_login ? (
+                            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+                              <a
+                                href={`https://github.com/${m.github_login}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-mono text-xs text-blue"
+                                style={{ textDecoration: 'underline' }}
+                                title="View GitHub profile"
+                              >
+                                @{m.github_login}
+                              </a>
+
+                              {repoInvitationsUrl && (
+                                <a
+                                  href={repoInvitationsUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                    padding: '2px 6px',
+                                    fontSize: 10,
+                                    borderRadius: 4,
+                                    background: 'rgba(16, 185, 129, 0.12)',
+                                    color: '#10B981',
+                                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                                    textDecoration: 'none',
+                                    fontWeight: 600,
+                                  }}
+                                  title="Open GitHub repo invitation link for teammate to accept"
+                                >
+                                  <span>Accept Invite</span>
+                                  <ExternalLink size={10} />
+                                </a>
+                              )}
+
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '2px 5px', fontSize: 10, color: 'var(--text-muted, #64748B)' }}
+                                title="Re-send GitHub repository collaboration invitation"
+                                onClick={() => handleInviteToGithub(m)}
+                              >
+                                Re-send
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span className="font-mono text-xs text-muted">—</span>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '2px 6px', fontSize: 10, color: 'var(--accent, #FF6B3D)', border: '1px dashed rgba(255,107,61,0.4)', borderRadius: 4 }}
+                                title="Manually link GitHub username and send collaboration invite"
+                                onClick={() => handleQuickLinkGithub(m)}
+                              >
+                                + Link
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {inviteUrl ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '4px 9px',
+                                  fontSize: 11,
+                                  borderRadius: 6,
+                                  background: copiedMemberId === m.id ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface-raised, #F1F5F9)',
+                                  border: copiedMemberId === m.id ? '1px solid #10B981' : '1px solid var(--border, #E2E8F0)',
+                                  color: copiedMemberId === m.id ? '#10B981' : 'var(--text-secondary, #334155)',
+                                  cursor: 'pointer',
+                                  fontWeight: 500,
+                                }}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(inviteUrl);
+                                  setCopiedMemberId(m.id);
+                                  setTimeout(() => setCopiedMemberId(null), 2500);
+                                  addToast(`Copied verification link for ${m.name}!`, 'green');
+                                }}
+                                title="Copy link for member to verify and provide GitHub username"
+                              >
+                                {copiedMemberId === m.id ? <Check size={12} className="text-green" /> : <Copy size={12} />}
+                                <span>{copiedMemberId === m.id ? 'Copied' : 'Copy Link'}</span>
+                              </button>
+
+                              <a
+                                href={inviteUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '4px 6px', fontSize: 11, color: '#6366F1' }}
+                                title="Open verification page in new tab"
+                              >
+                                <ExternalLink size={12} />
+                              </a>
+                            </div>
+                          ) : (
+                            <span className="font-mono text-xs text-muted">—</span>
+                          )}
                         </td>
                         <td>
                           <span className={`pill ${isAccepted ? 'pill-green' : 'pill-amber'}`}>

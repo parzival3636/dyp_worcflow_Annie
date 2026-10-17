@@ -461,7 +461,7 @@ def accept_invite(
         invite.status = "accepted"
         session.add(invite)
 
-        # Find or create member
+        # Find or create member by email or name
         member = session.exec(
             select(Member).where(
                 Member.project_id == project.id,
@@ -469,8 +469,18 @@ def accept_invite(
             )
         ).first()
 
+        if not member and payload.name:
+            member = session.exec(
+                select(Member).where(
+                    Member.project_id == project.id,
+                    Member.name == payload.name.strip(),
+                )
+            ).first()
+
         user_id = current_user.id if current_user else None
         display_name = payload.name or (current_user.name if current_user else invite.email.split("@")[0])
+        clean_github = payload.github_login.strip().replace("@", "") if payload.github_login else None
+        clean_tg = payload.telegram_username.strip().replace("@", "") if payload.telegram_username else None
 
         if not member:
             member = Member(
@@ -478,8 +488,8 @@ def accept_invite(
                 user_id=user_id,
                 name=display_name,
                 email=invite.email,
-                github_login=payload.github_login,
-                telegram_username=payload.telegram_username,
+                github_login=clean_github,
+                telegram_username=clean_tg,
                 role=invite.role,
                 invite_status="accepted",
                 onboarding_state="done",
@@ -491,11 +501,11 @@ def accept_invite(
             if user_id:
                 member.user_id = user_id
             if payload.name:
-                member.name = payload.name
-            if payload.github_login:
-                member.github_login = payload.github_login
-            if payload.telegram_username:
-                member.telegram_username = payload.telegram_username
+                member.name = payload.name.strip()
+            if clean_github:
+                member.github_login = clean_github
+            if clean_tg:
+                member.telegram_username = clean_tg
             session.add(member)
 
         # Log member joined event
@@ -504,7 +514,7 @@ def accept_invite(
             ts=datetime.now(timezone.utc),
             actor_member_id=member.id if member.id else None,
             type="member_joined",
-            payload={"name": member.name, "email": member.email, "role": member.role},
+            payload={"name": member.name, "email": member.email, "role": member.role, "github_login": member.github_login},
         )
         session.add(event)
 
@@ -528,23 +538,57 @@ def get_snapshot(code: str):
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        # Ensure repo_full_name is derived if repo_url exists
+        if not project.repo_full_name and project.repo_url:
+            cleaned = project.repo_url.replace("https://github.com/", "").strip("/")
+            parts = cleaned.split("/")
+            if len(parts) >= 2:
+                project.repo_full_name = f"{parts[-2]}/{parts[-1]}"
+                session.add(project)
+                session.flush()
+
+        # Invites mapped for project
+        invites = session.exec(select(Invite).where(Invite.project_id == project.id)).all()
+        invite_by_email = {inv.email.lower(): inv for inv in invites if inv.email}
+
         # Members
         members = session.exec(select(Member).where(Member.project_id == project.id)).all()
-        members_data = [
-            {
+        members_data = []
+        for m in members:
+            # Look up existing invite by email
+            inv = invite_by_email.get(m.email.lower()) if m.email else None
+            if not inv:
+                # Generate an active invite token for member verification & invite sharing
+                token = secrets.token_urlsafe(24)
+                email_val = m.email or f"{(m.name or 'member').lower().replace(' ', '')}@{project.code.lower()}.pilot"
+                inv = Invite(
+                    project_id=project.id,
+                    email=email_val,
+                    role=m.role or "member",
+                    token=token,
+                    status="accepted" if m.github_login else "pending",
+                    created_at=datetime.now(timezone.utc),
+                    expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+                )
+                session.add(inv)
+                session.flush()
+                invite_by_email[email_val.lower()] = inv
+
+            members_data.append({
                 "id": m.id,
                 "name": m.name,
                 "email": m.email,
                 "role": m.role,
                 "github_login": m.github_login,
+                "github_invite_status": m.github_invite_status or "none",
                 "telegram_username": m.telegram_username,
                 "telegram_id": m.telegram_id,
                 "invite_status": m.invite_status,
                 "onboarding_state": m.onboarding_state,
+                "invite_token": inv.token,
+                "invite_url": f"/invite/{inv.token}",
                 "color": None, # Computed on frontend by getOwnerColor
-            }
-            for m in members
-        ]
+            })
 
         # Blocks
         blocks = session.exec(select(Block).where(Block.project_id == project.id)).all()
@@ -1224,11 +1268,20 @@ def patch_project(code: str, body: ProjectPatchBody):
 
 class MemberCreateBody(BaseModel):
     name: str
+    email: Optional[str] = ""
     github_login: Optional[str] = ""
     telegram_username: Optional[str] = ""
     telegram_phone: Optional[str] = ""
     telegram_id: Optional[int] = None
     role: Optional[str] = "member"
+
+
+class MemberUpdateBody(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    github_login: Optional[str] = None
+    telegram_username: Optional[str] = None
+    role: Optional[str] = None
 
 
 @router.post("/projects/{code}/members")
@@ -1238,29 +1291,185 @@ def add_member(code: str, body: MemberCreateBody):
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
 
+        clean_gh = (body.github_login or "").strip().replace("@", "")
+        clean_tg = (body.telegram_username or "").strip().replace("@", "")
+        email_clean = (body.email or "").strip().lower()
+        if not email_clean:
+            email_clean = f"{body.name.lower().replace(' ', '')}@{project.code.lower()}.pilot"
+
         member = Member(
             project_id=project.id,
-            name=body.name,
-            github_login=body.github_login or "",
-            telegram_username=body.telegram_username or "",
+            name=body.name.strip(),
+            email=email_clean,
+            github_login=clean_gh,
+            telegram_username=clean_tg,
             telegram_id=body.telegram_id or 0,
             role=body.role or "member",
-            invite_status="accepted" if body.github_login else "pending",
-            onboarding_state="done" if body.github_login else "awaiting_github",
+            invite_status="accepted" if clean_gh else "pending",
+            onboarding_state="done" if clean_gh else "awaiting_github",
         )
         session.add(member)
         session.flush()
 
+        # Generate Invite record so invite/verification token is available immediately
+        token = secrets.token_urlsafe(24)
+        now = datetime.now(timezone.utc)
+        invite = Invite(
+            project_id=project.id,
+            email=email_clean,
+            role=body.role or "member",
+            token=token,
+            status="accepted" if clean_gh else "pending",
+            created_at=now,
+            expires_at=now + timedelta(days=7),
+        )
+        session.add(invite)
+
+        # Send invite email if real email provided and SMTP configured
+        if "@" in email_clean and not email_clean.endswith(".pilot"):
+            settings = get_settings()
+            if settings.smtp_host and settings.smtp_user:
+                try:
+                    invite_url = f"{settings.frontend_url}/invite/{token}"
+                    msg = MIMEMultipart("alternative")
+                    msg["Subject"] = f"You've been invited to join '{project.name}' on Pilot"
+                    msg["From"] = settings.smtp_from or settings.smtp_user
+                    msg["To"] = email_clean
+                    text_body = f"Hi {body.name},\n\nYou've been invited to join the project '{project.name}' on Pilot.\nAccept here: {invite_url}\n"
+                    msg.attach(MIMEText(text_body, "plain"))
+                    with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as smtp:
+                        smtp.ehlo()
+                        smtp.starttls()
+                        smtp.login(settings.smtp_user, settings.smtp_password)
+                        smtp.sendmail(msg["From"], [email_clean], msg.as_string())
+                    logger.info("Invite email sent to %s", email_clean)
+                except Exception as exc:
+                    logger.warning("Failed to send invite email to %s: %s", email_clean, exc)
+
         ev = Event(
             project_id=project.id,
-            ts=datetime.now(timezone.utc),
+            ts=now,
             actor_member_id=member.id,
             type="member_joined",
-            payload={"name": body.name, "github_login": body.github_login, "role": body.role},
+            payload={"name": member.name, "github_login": member.github_login, "email": member.email, "role": member.role},
         )
         session.add(ev)
         session.commit()
-        return {"status": "ok", "member_id": member.id}
+        return {
+            "status": "ok",
+            "member_id": member.id,
+            "invite_token": token,
+            "invite_url": f"/invite/{token}",
+        }
+
+
+@router.patch("/projects/{code}/members/{member_id}")
+def update_member(code: str, member_id: int, body: MemberUpdateBody):
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        member = session.get(Member, member_id)
+        if not member or member.project_id != project.id:
+            raise HTTPException(status_code=404, detail="Member not found")
+
+        if body.name is not None:
+            member.name = body.name.strip()
+        if body.email is not None:
+            member.email = body.email.strip().lower()
+        if body.telegram_username is not None:
+            member.telegram_username = body.telegram_username.strip().replace("@", "")
+        if body.role is not None:
+            member.role = body.role
+
+        repo_target = project.repo_full_name
+        if not repo_target and project.repo_url:
+            cleaned = project.repo_url.replace("https://github.com/", "").strip("/")
+            parts = cleaned.split("/")
+            if len(parts) >= 2:
+                repo_target = f"{parts[-2]}/{parts[-1]}"
+                project.repo_full_name = repo_target
+                session.add(project)
+
+        github_invite_status = member.github_invite_status or "none"
+        invitation_url = None
+        invite_error = None
+
+        if body.github_login is not None:
+            clean_login = body.github_login.strip().replace("@", "")
+            member.github_login = clean_login
+            if member.github_login:
+                member.invite_status = "accepted"
+                member.onboarding_state = "done"
+
+                # Trigger real GitHub repository collaborator invite
+                if repo_target:
+                    try:
+                        from annie.services.github_service import GitHubService
+                        gh = GitHubService()
+                        collab_res = gh.invite_collaborator(repo_target, member.github_login)
+                        github_invite_status = collab_res.status
+                        member.github_invite_status = collab_res.status
+                        invitation_url = f"https://github.com/{repo_target}/invitations"
+                        logger.info("Auto-invited %s to %s -> %s", member.github_login, repo_target, collab_res.status)
+                    except Exception as e:
+                        invite_error = str(e)
+                        logger.warning("Could not auto-invite %s to %s: %s", member.github_login, repo_target, e)
+
+        session.add(member)
+        session.commit()
+        return {
+            "status": "ok",
+            "member_id": member.id,
+            "github_login": member.github_login,
+            "github_invite_status": github_invite_status,
+            "repo_full_name": repo_target,
+            "invitation_url": invitation_url or (f"https://github.com/{repo_target}/invitations" if repo_target else None),
+            "invite_error": invite_error,
+        }
+
+
+@router.post("/projects/{code}/members/{member_id}/invite-github")
+def invite_member_to_github(code: str, member_id: int):
+    """Directly trigger or re-send a GitHub repository collaboration invite to member."""
+    with get_session() as session:
+        project = session.exec(select(Project).where(Project.code == code)).first()
+        if not project:
+            raise HTTPException(status_code=404, detail="Project not found")
+
+        member = session.get(Member, member_id)
+        if not member or member.project_id != project.id:
+            raise HTTPException(status_code=404, detail="Member not found")
+
+        if not member.github_login:
+            raise HTTPException(status_code=400, detail="Member has no GitHub username linked")
+
+        repo_target = project.repo_full_name
+        if not repo_target and project.repo_url:
+            cleaned = project.repo_url.replace("https://github.com/", "").strip("/")
+            parts = cleaned.split("/")
+            if len(parts) >= 2:
+                repo_target = f"{parts[-2]}/{parts[-1]}"
+                project.repo_full_name = repo_target
+                session.add(project)
+
+        if not repo_target:
+            raise HTTPException(status_code=400, detail="Project has no GitHub repository linked yet")
+
+        from annie.services.github_service import GitHubService
+        gh = GitHubService()
+        collab_res = gh.invite_collaborator(repo_target, member.github_login)
+        member.github_invite_status = collab_res.status
+        session.add(member)
+        session.commit()
+
+        return {
+            "status": collab_res.status,
+            "username": member.github_login,
+            "repo_full_name": repo_target,
+            "invitation_url": f"https://github.com/{repo_target}/invitations",
+        }
 
 
 @router.delete("/projects/{code}/members/{member_id}")
