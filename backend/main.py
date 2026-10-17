@@ -36,17 +36,42 @@ def _check_db() -> str:
 
 
 async def _check_llm() -> str:
-    try:
-        import httpx
-        settings = get_settings()
-        async with httpx.AsyncClient(timeout=5) as client:
-            resp = await client.get(f"{settings.llm_base_url}/models",
-                                    headers={"Authorization": f"Bearer {settings.llm_api_key}"})
-            if resp.status_code < 400:
-                return "ok"
-            return f"error: HTTP {resp.status_code}"
-    except Exception as exc:
-        return f"error: {exc}"
+    settings = get_settings()
+    # 1. Test Gemini if configured
+    if settings.gemini_api_key:
+        try:
+            from google import genai
+            client = genai.Client(api_key=settings.gemini_api_key)
+            model_name = settings.gemini_model or "gemini-flash-lite-latest"
+            resp = await asyncio.to_thread(
+                client.models.generate_content,
+                model=model_name,
+                contents="ping",
+            )
+            if resp and resp.text:
+                return f"ok (gemini: {model_name})"
+        except Exception as exc:
+            logger.warning("Gemini health check error: %s", exc)
+
+    # 2. Test OpenAI/Ollama endpoint if configured and not localhost
+    if settings.llm_base_url and "localhost" not in settings.llm_base_url and "127.0.0.1" not in settings.llm_base_url:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=5) as client:
+                headers = {}
+                if settings.llm_api_key:
+                    headers["Authorization"] = f"Bearer {settings.llm_api_key}"
+                resp = await client.get(f"{settings.llm_base_url}/models", headers=headers)
+                if resp.status_code < 400:
+                    return "ok"
+                return f"error: HTTP {resp.status_code}"
+        except Exception as exc:
+            return f"error: {exc}"
+
+    if settings.gemini_api_key:
+        return "ok"
+
+    return "error: no llm configured"
 
 
 def _check_telegram() -> str:
@@ -136,14 +161,23 @@ from auth_routes import router as auth_router
 
 app = FastAPI(title="Pilot", version="0.1.0", lifespan=lifespan)
 
+settings = get_settings()
+cors_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://worcflow-frontend.vercel.app",
+]
+if settings.frontend_url:
+    clean_fe = settings.frontend_url.rstrip("/")
+    if clean_fe not in cors_origins:
+        cors_origins.append(clean_fe)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=cors_origins,
+    allow_origin_regex=r"https:\/\/.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

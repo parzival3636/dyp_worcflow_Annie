@@ -22,9 +22,9 @@ class Settings(BaseSettings):
     bot_username: str = ""           # e.g. "pilot_coordinator_bot" (without @)
 
     # LLM
-    llm_base_url: str
-    llm_api_key: str
-    llm_model: str
+    llm_base_url: str = ""
+    llm_api_key: str = ""
+    llm_model: str = ""
     llm_fallback_model: str = ""
 
     # Database (Supabase Postgres – session pooler port 5432 or direct)
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     secret_key: str = "CHANGE_ME_IN_PRODUCTION_USE_A_LONG_RANDOM_STRING"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7   # 7 days
-    frontend_url: str = "http://localhost:5173"
+    frontend_url: str = "https://worcflow-frontend.vercel.app"
 
     # GitHub
     github_token: str = ""

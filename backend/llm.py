@@ -327,25 +327,62 @@ def _generate_fallback_plan(user_prompt: str) -> P2Plan:
 
 
 def _try_gemini_call(full_system: str, user_prompt: str, model_cls: Type[T]) -> Optional[T]:
-    """Attempt call to Google Gemini if configured."""
+    """Attempt call to Google Gemini with structured outputs and fallback models."""
     cfg = get_settings()
     api_key = cfg.gemini_api_key or os.environ.get("GEMINI_API_KEY")
     if not api_key:
         return None
     try:
         from google import genai
+        from google.genai import types
+
         client = genai.Client(api_key=api_key)
-        model_name = cfg.gemini_model or "gemini-2.5-flash"
-        prompt_content = f"{full_system}\n\nTask:\n{user_prompt}"
-        resp = client.models.generate_content(
-            model=model_name,
-            contents=prompt_content,
-        )
-        if resp and resp.text:
-            cleaned = extract_json_str(resp.text)
-            return model_cls.model_validate_json(cleaned)
+        models_to_try = [
+            cfg.gemini_model,
+            "gemini-flash-lite-latest",
+            "gemini-3.8-flash",
+            "gemini-flash-latest",
+            "gemini-2.5-flash-lite",
+        ]
+        models_to_try = list(dict.fromkeys([m for m in models_to_try if m]))
+        prompt_content = f"{full_system}\n\nTask/Input:\n{user_prompt}"
+
+        for model_name in models_to_try:
+            try:
+                # 1. Native structured output with response_schema
+                resp = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt_content,
+                    config=types.GenerateContentConfig(
+                        temperature=0.1,
+                        response_mime_type="application/json",
+                        response_schema=model_cls,
+                    ),
+                )
+                if resp and resp.text:
+                    cleaned = extract_json_str(resp.text)
+                    return model_cls.model_validate_json(cleaned)
+            except Exception as schema_exc:
+                logger.debug("Gemini response_schema on %s failed: %s, trying JSON mode", model_name, schema_exc)
+                try:
+                    # 2. JSON mode without strict response_schema
+                    resp = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt_content,
+                        config=types.GenerateContentConfig(
+                            temperature=0.1,
+                            response_mime_type="application/json",
+                        ),
+                    )
+                    if resp and resp.text:
+                        cleaned = extract_json_str(resp.text)
+                        return model_cls.model_validate_json(cleaned)
+                except Exception as inner_exc:
+                    logger.warning("Gemini model %s failed: %s", model_name, inner_exc)
+                    continue
+
     except Exception as exc:
-        logger.warning("Gemini LLM fallback call encountered error: %s", exc)
+        logger.warning("Gemini LLM call encountered error: %s", exc)
     return None
 
 
@@ -389,6 +426,7 @@ def call_json(
 ) -> Any:
     """
     Calls LLM asking for JSON matching model_cls.
+    Supports Google Gemini directly or OpenAI-compatible endpoint.
     Returns an AwaitableModelWrapper so it can be called synchronously:
         res = call_json(...)
         print(res.title)
@@ -396,6 +434,18 @@ def call_json(
         res = await call_json(...)
     """
     cfg = get_settings()
+
+    # If Gemini is configured and local LLM is not a remote endpoint, use Gemini directly
+    use_gemini_first = bool(
+        cfg.gemini_api_key
+        and (not cfg.llm_base_url or "localhost" in cfg.llm_base_url or "127.0.0.1" in cfg.llm_base_url)
+    )
+
+    if use_gemini_first:
+        gemini_res = _try_gemini_call(system, user, model_cls)
+        if gemini_res is not None:
+            return AwaitableModelWrapper(gemini_res)
+
     base_url = (cfg.llm_base_url or "http://localhost:11434/v1").rstrip("/")
     url = f"{base_url}/chat/completions"
 
@@ -463,10 +513,11 @@ def call_json(
         if http_client is None:
             client.close()
 
-    # Try Gemini if Ollama was unreachable
-    gemini_res = _try_gemini_call(full_system, user, model_cls)
-    if gemini_res is not None:
-        return AwaitableModelWrapper(gemini_res)
+    # Try Gemini if local endpoint failed and not already tried
+    if not use_gemini_first:
+        gemini_res = _try_gemini_call(full_system, user, model_cls)
+        if gemini_res is not None:
+            return AwaitableModelWrapper(gemini_res)
 
     # Fallback if exhausted
     fallback = get_fallback(model_cls, user)
