@@ -167,7 +167,7 @@ export default function AnnieTasksPage() {
   })
 
   return (
-    <div className="annie-container" style={{ minHeight: '100vh', background: 'var(--bg, #F8F9FA)' }}>
+    <div className="annie-container" style={{ minHeight: '100%', background: 'var(--bg, #F8F9FA)' }}>
       <AnnieNav />
 
       <div style={{ padding: '28px 40px', maxWidth: '1360px', margin: '0 auto' }}>

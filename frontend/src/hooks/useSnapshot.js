@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { SEEDED_SNAPSHOT } from '../mock/snapshot';
 
-const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+const isNative = Capacitor.isNativePlatform();
+const defaultApiBase = isNative
+  ? (Capacitor.getPlatform() === 'android' ? 'http://10.0.2.2:8000/api' : 'http://localhost:8000/api')
+  : '/api';
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : defaultApiBase);
 const POLL_INTERVAL = 2000;
 
 /* ===== Owner color from palette (Jira Accessible) ===== */

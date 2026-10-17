@@ -339,7 +339,7 @@ export default function ProjectShell() {
         />
 
         {/* Router Outlet for Page Content */}
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
+        <div className="shell-outlet-wrapper">
           <Outlet
             context={{
               snapshot,

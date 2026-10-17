@@ -1,10 +1,11 @@
 /* ===== GuideChat Page Styles (Jira Light) ===== */
 .guide-chat-page {
   height: 100%;
+  min-height: 540px;
   width: 100%;
   padding: 24px;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   background: var(--bg);
 }
 
