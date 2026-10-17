@@ -1,0 +1,999 @@
+2026-10-17T10:01:05.206545384Z [err]      config.load_app()
+2026-10-17T10:01:05.206548014Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:05.206550474Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:05.206553424Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:05.206555834Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:05.206558244Z [err]      raise exc from None
+2026-10-17T10:01:05.206560574Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:05.206563414Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:05.206566184Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:05.206568914Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:05.206571453Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:05.206573773Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:05.206576493Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:05.206579053Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:05.206582353Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:05.206585193Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:05.206587683Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:05.206590163Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:05.206593153Z [err]      from routes import router as api_router
+2026-10-17T10:01:05.206596213Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:05.206598723Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:06.150362170Z [err]      )
+2026-10-17T10:01:06.150364250Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:06.150366160Z [err]      ^
+2026-10-17T10:01:06.150369100Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:06.150371700Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:06.150372040Z [err]      config.load_app()
+2026-10-17T10:01:06.150372200Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:06.150376090Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:06.150376480Z [err]      sys.exit(main())
+2026-10-17T10:01:06.150379700Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:06.150381040Z [err]               ~~~~^^
+2026-10-17T10:01:06.150383440Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:06.150386380Z [err]      ...<49 lines>...
+2026-10-17T10:01:06.150387880Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:06.150391470Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:06.150393540Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:06.150395390Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:06.150396650Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:06.150397260Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:06.150399320Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:06.150400880Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:06.150404819Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:06.150407639Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:06.150410219Z [err]      raise exc from None
+2026-10-17T10:01:06.150412489Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:06.150415729Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:06.150418709Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:06.150424599Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:06.150427239Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:06.150430879Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:06.150435459Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:06.150438349Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:06.150438369Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:06.150439199Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:06.150443819Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:06.150446969Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:06.150452039Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:06.150453599Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:06.150454839Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:06.150459159Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:06.150462739Z [err]      import bcrypt
+2026-10-17T10:01:06.150468018Z [err]      from routes import router as api_router
+2026-10-17T10:01:06.150468248Z [err]      run(
+2026-10-17T10:01:06.150471358Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:06.150475038Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:06.150477498Z [err]      ~~~^
+2026-10-17T10:01:06.150481578Z [err]          app,
+2026-10-17T10:01:06.150486398Z [err]          ^^^^
+2026-10-17T10:01:07.183720828Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:07.183725808Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:07.183731398Z [err]      sys.exit(main())
+2026-10-17T10:01:07.183734297Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:07.183735687Z [err]      ...<49 lines>...
+2026-10-17T10:01:07.183736017Z [err]               ~~~~^^
+2026-10-17T10:01:07.183740257Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:01:07.183741547Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:07.183742467Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:07.183746717Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:07.183748717Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:07.183749627Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:07.183751887Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:07.183752867Z [err]          app,
+2026-10-17T10:01:07.183758437Z [err]          ^^^^
+2026-10-17T10:01:07.183761857Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:07.183762557Z [err]      config.load_app()
+2026-10-17T10:01:07.183764087Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:07.183764987Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:07.183769447Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:07.183771777Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:07.183772477Z [err]      run(
+2026-10-17T10:01:07.183772767Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:07.183775187Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:07.183779337Z [err]      )
+2026-10-17T10:01:07.183780307Z [err]      ~~~^
+2026-10-17T10:01:07.183780347Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:07.183780757Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:07.183784377Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:07.183789997Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:07.183791337Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:07.183792767Z [err]      ^
+2026-10-17T10:01:07.183795676Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:07.183799516Z [err]      raise exc from None
+2026-10-17T10:01:07.183800636Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:07.183805996Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:07.183806286Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:07.183812876Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:07.183814116Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:07.183819406Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:07.183823916Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:07.183829036Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:07.183832246Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:07.183835366Z [err]      from routes import router as api_router
+2026-10-17T10:01:07.183838746Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:07.183841796Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:07.183845126Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:07.183848566Z [err]      import bcrypt
+2026-10-17T10:01:07.183852016Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:08.247737261Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:08.247750061Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:08.247755521Z [err]      sys.exit(main())
+2026-10-17T10:01:08.247760301Z [err]               ~~~~^^
+2026-10-17T10:01:08.247765831Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:01:08.247770321Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:08.247774011Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:08.247777581Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:08.247780810Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:08.247785970Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:08.247789620Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:08.247793170Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:08.247797600Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:08.247803200Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:08.247807590Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:08.247811190Z [err]      run(
+2026-10-17T10:01:08.247814450Z [err]      ~~~^
+2026-10-17T10:01:08.247818060Z [err]          app,
+2026-10-17T10:01:08.247821720Z [err]          ^^^^
+2026-10-17T10:01:08.247825610Z [err]      ...<49 lines>...
+2026-10-17T10:01:08.247828990Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:08.247832280Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:08.247882429Z [err]      )
+2026-10-17T10:01:08.247885419Z [err]      ^
+2026-10-17T10:01:08.247888619Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:08.247908278Z [err]      config.load_app()
+2026-10-17T10:01:08.247913979Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:08.247917949Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:08.247921699Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:08.247925859Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:08.247929979Z [err]      raise exc from None
+2026-10-17T10:01:08.247959049Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:08.247967438Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:08.247970408Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:08.247976268Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:08.247976598Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:08.247983858Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:08.247984678Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:08.247989398Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:08.247992348Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:08.247995758Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:08.248000208Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:08.248003358Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:08.248006868Z [err]      from routes import router as api_router
+2026-10-17T10:01:08.248010988Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:08.248014538Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:08.248017478Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:08.248020337Z [err]      import bcrypt
+2026-10-17T10:01:08.248023307Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:09.253111619Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:09.253115219Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:09.253119029Z [err]      sys.exit(main())
+2026-10-17T10:01:09.253128819Z [err]      ...<49 lines>...
+2026-10-17T10:01:09.253132179Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:09.253132979Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:09.253134739Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:09.253136978Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:09.253137268Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:09.253142788Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:09.253143128Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:09.253143388Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:09.253147058Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:09.253147238Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:09.253148338Z [err]      raise exc from None
+2026-10-17T10:01:09.253152058Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:09.253152078Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:09.253157638Z [err]      )
+2026-10-17T10:01:09.253158938Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:09.253161188Z [err]               ~~~~^^
+2026-10-17T10:01:09.253162928Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:09.253164248Z [err]      ~~~^
+2026-10-17T10:01:09.253167118Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:09.253167488Z [err]      ^
+2026-10-17T10:01:09.253169348Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:01:09.253171458Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:09.253172748Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:09.253177138Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:09.253180258Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:09.253181868Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:09.253183568Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:09.253187718Z [err]          app,
+2026-10-17T10:01:09.253189468Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:09.253189708Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:09.253195698Z [err]      run(
+2026-10-17T10:01:09.253196528Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:09.253197717Z [err]      config.load_app()
+2026-10-17T10:01:09.253197807Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:09.253202577Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:09.253204347Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:09.253209957Z [err]          ^^^^
+2026-10-17T10:01:09.253210007Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:09.253210507Z [err]      from routes import router as api_router
+2026-10-17T10:01:09.253211967Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:09.253217607Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:09.253219947Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:09.253220267Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:09.253224887Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:09.253252368Z [err]      import bcrypt
+2026-10-17T10:01:10.281143339Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:10.281149129Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:10.281153389Z [err]      sys.exit(main())
+2026-10-17T10:01:10.281156718Z [err]               ~~~~^^
+2026-10-17T10:01:10.281159728Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:01:10.281163318Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:10.281166218Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:10.281169538Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:10.281172768Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:10.281175778Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:10.281179948Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:10.281183818Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:10.281187448Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:10.281190768Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:10.281194428Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:10.281200398Z [err]      run(
+2026-10-17T10:01:10.281200408Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:10.281204708Z [err]      ~~~^
+2026-10-17T10:01:10.281208308Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:10.281214398Z [err]          app,
+2026-10-17T10:01:10.281215147Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:10.281220577Z [err]          ^^^^
+2026-10-17T10:01:10.281222727Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:10.281227337Z [err]      ...<49 lines>...
+2026-10-17T10:01:10.281231937Z [err]      from routes import router as api_router
+2026-10-17T10:01:10.281234607Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:10.281238607Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:10.281241407Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:10.281246657Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:10.281247567Z [err]      )
+2026-10-17T10:01:10.281253997Z [err]      ^
+2026-10-17T10:01:10.281254307Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:10.281261997Z [err]      import bcrypt
+2026-10-17T10:01:10.281262287Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:10.281269377Z [err]      config.load_app()
+2026-10-17T10:01:10.281269677Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:10.281274347Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:10.281277456Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:10.281280456Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:10.281283296Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:10.281286736Z [err]      raise exc from None
+2026-10-17T10:01:10.281291556Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:10.281294936Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:10.281299306Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:10.281302356Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:10.281305116Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:10.281308566Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:10.281311626Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:10.281315886Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:11.283181878Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:11.283188508Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:11.283192148Z [err]      sys.exit(main())
+2026-10-17T10:01:11.283196228Z [err]               ~~~~^^
+2026-10-17T10:01:11.283200458Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:01:11.283204988Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:11.283209048Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:11.283215558Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:11.283218048Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:11.283218978Z [err]      ^
+2026-10-17T10:01:11.283222288Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:11.283225677Z [err]      import bcrypt
+2026-10-17T10:01:11.283227177Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:11.283230157Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:11.283234097Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:11.283234127Z [err]      config.load_app()
+2026-10-17T10:01:11.283238997Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:11.283243217Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:11.283249917Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:11.283250077Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:11.283250127Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:11.283250547Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:11.283254177Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:11.283257927Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:11.283262167Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:11.283263927Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:11.283266647Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:11.283268367Z [err]      run(
+2026-10-17T10:01:11.283269507Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:11.283271617Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:11.283276697Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:11.283276857Z [err]      from routes import router as api_router
+2026-10-17T10:01:11.283277457Z [err]      ~~~^
+2026-10-17T10:01:11.283283076Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:11.283284866Z [err]          app,
+2026-10-17T10:01:11.283290346Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:11.283294006Z [err]          ^^^^
+2026-10-17T10:01:11.283299526Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:11.283300336Z [err]      ...<49 lines>...
+2026-10-17T10:01:11.283307326Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:11.283316216Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:11.283321816Z [err]      )
+2026-10-17T10:01:11.283332246Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:11.283349085Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:11.283370315Z [err]      raise exc from None
+2026-10-17T10:01:11.283375185Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:11.283379525Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:11.283384145Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:12.396914307Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:12.396919667Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:12.396924616Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:12.396928736Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:12.396932626Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:12.396937856Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:12.396942666Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:12.396947936Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:12.396952906Z [err]      from routes import router as api_router
+2026-10-17T10:01:12.396957126Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:12.396963526Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:12.396967856Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:12.396971976Z [err]      import bcrypt
+2026-10-17T10:01:12.396975996Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:12.397002945Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:12.397007075Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:12.397010995Z [err]      sys.exit(main())
+2026-10-17T10:01:12.397015735Z [err]               ~~~~^^
+2026-10-17T10:01:12.397019905Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:01:12.397023675Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:12.397028325Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:12.397032195Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:12.397035955Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:12.397039665Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:12.397043134Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:12.397047594Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:12.397051484Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:12.397056084Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:12.397059774Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:12.397063744Z [err]      run(
+2026-10-17T10:01:12.397067614Z [err]      ~~~^
+2026-10-17T10:01:12.397071154Z [err]          app,
+2026-10-17T10:01:12.397075114Z [err]          ^^^^
+2026-10-17T10:01:12.397078754Z [err]      ...<49 lines>...
+2026-10-17T10:01:12.397082604Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:12.397086804Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:12.397090664Z [err]      )
+2026-10-17T10:01:12.397094224Z [err]      ^
+2026-10-17T10:01:12.397097624Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:12.397100984Z [err]      config.load_app()
+2026-10-17T10:01:12.397104353Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:12.397107873Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:12.397111583Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:12.397115043Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:12.397118573Z [err]      raise exc from None
+2026-10-17T10:01:12.397121923Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:12.397125223Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:12.397128453Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:12.397131883Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:13.392079602Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:13.392084482Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:13.392091502Z [err]      sys.exit(main())
+2026-10-17T10:01:13.392093452Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:13.392095922Z [err]               ~~~~^^
+2026-10-17T10:01:13.392101012Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:01:13.392108762Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:13.392108872Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:13.392111182Z [err]      ~~~^
+2026-10-17T10:01:13.392111742Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:13.392115742Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:13.392119632Z [err]      import bcrypt
+2026-10-17T10:01:13.392122311Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:13.392124831Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:13.392126241Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:13.392130251Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:13.392133001Z [err]          app,
+2026-10-17T10:01:13.392136261Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:13.392139751Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:13.392143611Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:13.392145891Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:13.392148671Z [err]          ^^^^
+2026-10-17T10:01:13.392150321Z [err]      raise exc from None
+2026-10-17T10:01:13.392156691Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:13.392158061Z [err]      )
+2026-10-17T10:01:13.392159751Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:13.392165081Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:13.392167361Z [err]      ...<49 lines>...
+2026-10-17T10:01:13.392171461Z [err]      ^
+2026-10-17T10:01:13.392173781Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:13.392173911Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:13.392176881Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:13.392185430Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:13.392185610Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:13.392187930Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:13.392189780Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:13.392191770Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:13.392191820Z [err]      from routes import router as api_router
+2026-10-17T10:01:13.392193070Z [err]      config.load_app()
+2026-10-17T10:01:13.392202170Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:13.392202490Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:01:13.392202710Z [err]      run(
+2026-10-17T10:01:13.392206050Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:13.392206190Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:13.392215290Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:13.392216250Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:13.392219770Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:13.392220390Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:13.392224960Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:14.388053135Z [err]  Traceback (most recent call last):
+2026-10-17T10:01:14.388064115Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:01:14.388068205Z [err]      sys.exit(main())
+2026-10-17T10:01:14.388072585Z [err]               ~~~~^^
+2026-10-17T10:01:14.388076755Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:01:14.388080875Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:01:14.388084505Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:14.388088145Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:01:14.388092285Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:01:14.388095654Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:01:14.388099194Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:01:14.388103084Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:14.388106524Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:01:14.388109854Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:01:14.388113734Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:01:14.388117044Z [err]      run(
+2026-10-17T10:01:14.388121394Z [err]      ~~~^
+2026-10-17T10:01:14.388124874Z [err]          app,
+2026-10-17T10:01:14.388128104Z [err]          ^^^^
+2026-10-17T10:01:14.388131494Z [err]      ...<49 lines>...
+2026-10-17T10:01:14.388134894Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:01:14.388138734Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:14.388142244Z [err]      )
+2026-10-17T10:01:14.388145754Z [err]      ^
+2026-10-17T10:01:14.388151024Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:01:14.388156273Z [err]      config.load_app()
+2026-10-17T10:01:14.388160813Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:01:14.388167333Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:01:14.388174193Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:01:14.388177823Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:01:14.388179503Z [err]      from routes import router as api_router
+2026-10-17T10:01:14.388184613Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:01:14.388186703Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:01:14.388186763Z [err]      return import_from_string(self.app)
+2026-10-17T10:01:14.388191244Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:01:14.388192214Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:01:14.388199044Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:01:14.388202084Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:01:14.388202104Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:01:14.388202894Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:01:14.388209404Z [err]      raise exc from None
+2026-10-17T10:01:14.388212534Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:01:14.388212564Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:01:14.388213374Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:01:14.388219693Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:01:14.388220533Z [err]      import bcrypt
+2026-10-17T10:01:14.388224343Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:01:14.388228723Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:01:14.388233203Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:05.133031256Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:05.133040316Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:05.133041736Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:05.133048165Z [err]      sys.exit(main())
+2026-10-17T10:06:05.133054895Z [err]               ~~~~^^
+2026-10-17T10:06:05.133056065Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:05.133060745Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:05.133063665Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:05.133069475Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:05.133070265Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.133078365Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.133079225Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:05.133079425Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:05.133086275Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:05.133089635Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:05.133089655Z [err]      raise exc from None
+2026-10-17T10:06:05.133091135Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:05.133091405Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:05.133099975Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:05.133107095Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:05.133108764Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:05.133108814Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:05.133112174Z [err]      from routes import router as api_router
+2026-10-17T10:06:05.133114944Z [err]      run(
+2026-10-17T10:06:05.133118034Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:05.133121894Z [err]      ~~~^
+2026-10-17T10:06:05.133125184Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.133128364Z [err]          app,
+2026-10-17T10:06:05.133131294Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:05.133135494Z [err]          ^^^^
+2026-10-17T10:06:05.133138364Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:05.133144694Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:05.133147614Z [err]      ...<49 lines>...
+2026-10-17T10:06:05.133149394Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:05.133154014Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:05.133165435Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:05.133171744Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.133176644Z [err]      )
+2026-10-17T10:06:05.133181604Z [err]      ^
+2026-10-17T10:06:05.133361171Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:05.133366621Z [err]      config.load_app()
+2026-10-17T10:06:05.133370461Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:05.133374271Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:05.133378551Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:05.133383501Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:05.133902602Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:05.133912012Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:05.133915732Z [err]      import bcrypt
+2026-10-17T10:06:05.133918952Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:05.133922392Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:05.133926712Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:05.133930142Z [err]      sys.exit(main())
+2026-10-17T10:06:05.133933432Z [err]               ~~~~^^
+2026-10-17T10:06:05.133936862Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:05.133940462Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:05.133943912Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.133947082Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:05.133950182Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:05.133953461Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:05.133957671Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:05.133961111Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.133964481Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:05.133967951Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:05.133970931Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:05.133973961Z [err]      run(
+2026-10-17T10:06:05.133977591Z [err]      ~~~^
+2026-10-17T10:06:05.133981191Z [err]          app,
+2026-10-17T10:06:05.133985491Z [err]          ^^^^
+2026-10-17T10:06:05.133989131Z [err]      ...<49 lines>...
+2026-10-17T10:06:05.133992571Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:05.133995481Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.133998611Z [err]      )
+2026-10-17T10:06:05.134001641Z [err]      ^
+2026-10-17T10:06:05.134004541Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:05.134007371Z [err]      config.load_app()
+2026-10-17T10:06:05.134010441Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:05.134016490Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:05.134019510Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:05.134022560Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:05.134025370Z [err]      raise exc from None
+2026-10-17T10:06:05.134028431Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:05.134032221Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:05.134035641Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:05.134039021Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:05.134041951Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134046071Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:05.134049021Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:05.134052241Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:05.134055211Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:05.134058121Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:05.134061591Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:05.134064861Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:05.134068061Z [err]      from routes import router as api_router
+2026-10-17T10:06:05.134071421Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:05.134074410Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:05.134077350Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:05.134080120Z [err]      import bcrypt
+2026-10-17T10:06:05.134083370Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:05.134086800Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:05.134090210Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:05.134093130Z [err]      sys.exit(main())
+2026-10-17T10:06:05.134096180Z [err]               ~~~~^^
+2026-10-17T10:06:05.134099300Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:05.134102430Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:05.134106000Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134109050Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:05.134112050Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:05.134114810Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:05.134118100Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:05.134120860Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134124830Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:05.134128070Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:05.134130920Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:05.134133839Z [err]      run(
+2026-10-17T10:06:05.134136749Z [err]      ~~~^
+2026-10-17T10:06:05.134139519Z [err]          app,
+2026-10-17T10:06:05.134142749Z [err]          ^^^^
+2026-10-17T10:06:05.134149109Z [err]      ...<49 lines>...
+2026-10-17T10:06:05.134152499Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:05.134156249Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134159299Z [err]      )
+2026-10-17T10:06:05.134162509Z [err]      ^
+2026-10-17T10:06:05.134165939Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:05.134168809Z [err]      config.load_app()
+2026-10-17T10:06:05.134172159Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:05.134246598Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:05.134249848Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:05.134252878Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:05.134255907Z [err]      raise exc from None
+2026-10-17T10:06:05.134259117Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:05.134262247Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:05.134264887Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:05.134267467Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:05.134270267Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134273647Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:05.134276057Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:05.134278507Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:05.134281537Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:05.134284107Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:05.134287267Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:05.134289867Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:05.134292687Z [err]      from routes import router as api_router
+2026-10-17T10:06:05.134296117Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:05.134299287Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:05.134302647Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:05.134306047Z [err]      import bcrypt
+2026-10-17T10:06:05.134310177Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:05.134313007Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:05.134316006Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:05.134318706Z [err]      sys.exit(main())
+2026-10-17T10:06:05.134322646Z [err]               ~~~~^^
+2026-10-17T10:06:05.134325206Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:05.134327786Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:05.134331296Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134334276Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:05.134336736Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:05.134339416Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:05.134341966Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:05.134345796Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134348756Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:05.134351876Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:05.134355146Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:05.134357996Z [err]      run(
+2026-10-17T10:06:05.134361016Z [err]      ~~~^
+2026-10-17T10:06:05.134363716Z [err]          app,
+2026-10-17T10:06:05.134366306Z [err]          ^^^^
+2026-10-17T10:06:05.134368916Z [err]      ...<49 lines>...
+2026-10-17T10:06:05.134372146Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:05.134375845Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134379015Z [err]      )
+2026-10-17T10:06:05.134381795Z [err]      ^
+2026-10-17T10:06:05.134384505Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:05.134387425Z [err]      config.load_app()
+2026-10-17T10:06:05.134741299Z [err]      raise exc from None
+2026-10-17T10:06:05.134744129Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:05.134748849Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:05.134752649Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:05.134756049Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:05.134760819Z [err]      raise exc from None
+2026-10-17T10:06:05.134764849Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:05.134768649Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:05.134773099Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:05.134776909Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:05.134780299Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134783959Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:05.134787529Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:05.134790969Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:05.134794329Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:05.134797718Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:05.134800758Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:05.134803798Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:05.134807948Z [err]      from routes import router as api_router
+2026-10-17T10:06:05.134811538Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:05.134814778Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:05.134818198Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:05.134821398Z [err]      import bcrypt
+2026-10-17T10:06:05.134825478Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:05.134829468Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:05.134833408Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:05.134837538Z [err]      sys.exit(main())
+2026-10-17T10:06:05.134841718Z [err]               ~~~~^^
+2026-10-17T10:06:05.134845278Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:05.134851658Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:05.134855428Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134859507Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:05.134863957Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:05.134867807Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:05.134871957Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:05.134875747Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134879257Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:05.134882707Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:05.134885907Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:05.134889547Z [err]      run(
+2026-10-17T10:06:05.134893098Z [err]      ~~~^
+2026-10-17T10:06:05.134897028Z [err]          app,
+2026-10-17T10:06:05.134900368Z [err]          ^^^^
+2026-10-17T10:06:05.134903908Z [err]      ...<49 lines>...
+2026-10-17T10:06:05.134907418Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:05.134911088Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.134914908Z [err]      )
+2026-10-17T10:06:05.134918657Z [err]      ^
+2026-10-17T10:06:05.134921927Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:05.134925017Z [err]      config.load_app()
+2026-10-17T10:06:05.134928237Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:05.134931497Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:05.134934947Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:05.134938197Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:05.135057575Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:05.135060555Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:05.135063155Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:05.135065495Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:05.135068285Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:05.135070865Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:05.135093825Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:05.135118664Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:05.135121994Z [err]      from routes import router as api_router
+2026-10-17T10:06:05.135125034Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:05.135126814Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:05.135128034Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:05.135129754Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:05.135130884Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:05.135132594Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:05.135133734Z [err]      import bcrypt
+2026-10-17T10:06:05.135135244Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:05.135136704Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:06.004423898Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:06.004431987Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:06.004437397Z [err]      sys.exit(main())
+2026-10-17T10:06:06.004443197Z [err]               ~~~~^^
+2026-10-17T10:06:06.004447937Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:06.004453377Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:06.004458537Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:06.004467027Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:06.004470767Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:06.004475417Z [err]      )
+2026-10-17T10:06:06.004481037Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:06.004482627Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:06.004485906Z [err]      ^
+2026-10-17T10:06:06.004491736Z [err]      run(
+2026-10-17T10:06:06.004494706Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:06.004497866Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:06.004504506Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:06.004513376Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:06.004513866Z [err]      ~~~^
+2026-10-17T10:06:06.004518496Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:06.004521936Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:06.004522586Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:06.004528466Z [err]          app,
+2026-10-17T10:06:06.004528776Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:06.004530936Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:06.004531386Z [err]          ^^^^
+2026-10-17T10:06:06.004535676Z [err]      raise exc from None
+2026-10-17T10:06:06.004540176Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:06.004544356Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:06.004544936Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:06.004549015Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:06.004558015Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:06.004558355Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:06.004559065Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:06.004563945Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:06.004566205Z [err]      ...<49 lines>...
+2026-10-17T10:06:06.004569605Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:06.004570495Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:06.004576755Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:06.004576895Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:06.004580025Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:06.004580825Z [err]      from routes import router as api_router
+2026-10-17T10:06:06.004586665Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:06.004591935Z [err]      config.load_app()
+2026-10-17T10:06:06.004594275Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:06.004599625Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:06.004602235Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:06.004605775Z [err]      import bcrypt
+2026-10-17T10:06:06.004608944Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:07.068807769Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:07.068810489Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:07.068813139Z [err]      sys.exit(main())
+2026-10-17T10:06:07.068815289Z [err]               ~~~~^^
+2026-10-17T10:06:07.068819049Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:07.068821239Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:07.068823559Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:07.068826309Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:07.068828649Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:07.068831329Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:07.068849638Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:07.068851818Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:07.068853948Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:07.068857588Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:07.068859758Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:07.068862828Z [err]      run(
+2026-10-17T10:06:07.068865518Z [err]      ~~~^
+2026-10-17T10:06:07.068867698Z [err]          app,
+2026-10-17T10:06:07.068869808Z [err]          ^^^^
+2026-10-17T10:06:07.068871928Z [err]      ...<49 lines>...
+2026-10-17T10:06:07.068875558Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:07.068877798Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:07.068880078Z [err]      )
+2026-10-17T10:06:07.068882528Z [err]      ^
+2026-10-17T10:06:07.068884738Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:07.069003946Z [err]      config.load_app()
+2026-10-17T10:06:07.069006286Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:07.069008466Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:07.069010886Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:07.069013256Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:07.069016396Z [err]      raise exc from None
+2026-10-17T10:06:07.069018576Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:07.069020686Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:07.069022865Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:07.069024995Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:07.069028185Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:07.069030525Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:07.069032665Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:07.069034905Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:07.069037025Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:07.069039185Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:07.069041905Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:07.069044465Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:07.069046735Z [err]      from routes import router as api_router
+2026-10-17T10:06:07.069049125Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:07.069051445Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:07.069054835Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:07.069057085Z [err]      import bcrypt
+2026-10-17T10:06:07.069059195Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:08.011365716Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:08.011376796Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:08.011381575Z [err]      sys.exit(main())
+2026-10-17T10:06:08.011386035Z [err]               ~~~~^^
+2026-10-17T10:06:08.011396855Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:08.011401075Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:08.011404565Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:08.011408195Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:08.011411575Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:08.011415075Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:08.011419215Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:08.011422775Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:08.011426565Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:08.011430395Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:08.011433455Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:08.011436775Z [err]      run(
+2026-10-17T10:06:08.011439844Z [err]      ~~~^
+2026-10-17T10:06:08.011444024Z [err]          app,
+2026-10-17T10:06:08.011447204Z [err]          ^^^^
+2026-10-17T10:06:08.011450694Z [err]      ...<49 lines>...
+2026-10-17T10:06:08.011454274Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:08.011457724Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:08.011461114Z [err]      )
+2026-10-17T10:06:08.011464034Z [err]      ^
+2026-10-17T10:06:08.011467394Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:08.011563442Z [err]      config.load_app()
+2026-10-17T10:06:08.011564502Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:08.011570872Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:08.011574812Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:08.011578742Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:08.011581582Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:08.011586392Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:08.011588592Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:08.011593592Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:08.011596382Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:08.011604762Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:08.011605042Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:08.011613402Z [err]      raise exc from None
+2026-10-17T10:06:08.011613972Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:08.011619781Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:08.011622231Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:08.011625361Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:08.011628741Z [err]      from routes import router as api_router
+2026-10-17T10:06:08.011633281Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:08.011636031Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:08.011639491Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:08.011644151Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:08.011647781Z [err]      import bcrypt
+2026-10-17T10:06:08.011651011Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:09.045747919Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:09.045750968Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:09.045754828Z [err]      sys.exit(main())
+2026-10-17T10:06:09.045760668Z [err]               ~~~~^^
+2026-10-17T10:06:09.045762468Z [err]      ^
+2026-10-17T10:06:09.045765268Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:09.045768478Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:09.045773078Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:09.045776848Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:09.045779798Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:09.045784058Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:09.045788558Z [err]      config.load_app()
+2026-10-17T10:06:09.045788878Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:09.045794958Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:09.045798378Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:09.045801048Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:09.045808238Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:09.045808798Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:09.045813997Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:09.045816997Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:09.045819387Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:09.045826037Z [err]      run(
+2026-10-17T10:06:09.045826737Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:09.045830087Z [err]      ~~~^
+2026-10-17T10:06:09.045835217Z [err]      raise exc from None
+2026-10-17T10:06:09.045838037Z [err]          app,
+2026-10-17T10:06:09.045843717Z [err]          ^^^^
+2026-10-17T10:06:09.045846007Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:09.045849087Z [err]      ...<49 lines>...
+2026-10-17T10:06:09.045855437Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:09.045855527Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:09.045861707Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:09.045867887Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:09.045868007Z [err]      )
+2026-10-17T10:06:09.045875146Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:09.045879666Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:09.045884246Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:09.045888856Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:09.045892946Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:09.045897236Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:09.045901996Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:09.045906186Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:09.045910786Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:09.045914886Z [err]      from routes import router as api_router
+2026-10-17T10:06:09.045918996Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:09.045923596Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:09.045928596Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:09.045933176Z [err]      import bcrypt
+2026-10-17T10:06:09.045939105Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:10.095420956Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:10.095423186Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:10.095426116Z [err]      sys.exit(main())
+2026-10-17T10:06:10.095428596Z [err]               ~~~~^^
+2026-10-17T10:06:10.095431036Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:10.095433186Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:10.095435726Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:10.095437816Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:10.095440546Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:10.095443126Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:10.095445416Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:10.095447666Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:10.095450016Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:10.095452156Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:10.095454876Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:10.095457126Z [err]      run(
+2026-10-17T10:06:10.095459706Z [err]      ~~~^
+2026-10-17T10:06:10.095461816Z [err]          app,
+2026-10-17T10:06:10.095464046Z [err]          ^^^^
+2026-10-17T10:06:10.095466496Z [err]      ...<49 lines>...
+2026-10-17T10:06:10.095468906Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:10.095471076Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:10.095473515Z [err]      )
+2026-10-17T10:06:10.095475895Z [err]      ^
+2026-10-17T10:06:10.095478215Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:10.095480695Z [err]      config.load_app()
+2026-10-17T10:06:10.095482865Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:10.095485175Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:10.095487815Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:10.095490515Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:10.095493495Z [err]      raise exc from None
+2026-10-17T10:06:10.095495755Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:10.095498295Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:10.095500745Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:10.095503145Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:10.095505875Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:10.095508775Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:10.095511445Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:10.095513955Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:10.095516475Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:10.095519145Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:10.095521685Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:10.095524355Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:10.095526695Z [err]      from routes import router as api_router
+2026-10-17T10:06:10.095530805Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:10.095533444Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:10.095536194Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:10.095538544Z [err]      import bcrypt
+2026-10-17T10:06:10.095541004Z [err]  ModuleNotFoundError: No module named 'bcrypt'
+2026-10-17T10:06:11.070052210Z [err]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:11.070056090Z [err]      )
+2026-10-17T10:06:11.070060780Z [err]      ^
+2026-10-17T10:06:11.070063360Z [err]  Traceback (most recent call last):
+2026-10-17T10:06:11.070066700Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 620, in run
+2026-10-17T10:06:11.070071780Z [err]    File "/app/.venv/bin/uvicorn", line 6, in <module>
+2026-10-17T10:06:11.070074369Z [err]      config.load_app()
+2026-10-17T10:06:11.070078589Z [err]      sys.exit(main())
+2026-10-17T10:06:11.070081109Z [err]      ~~~~~~~~~~~~~~~^^
+2026-10-17T10:06:11.070085479Z [err]               ~~~~^^
+2026-10-17T10:06:11.070087909Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/config.py", line 434, in load_app
+2026-10-17T10:06:11.070092659Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1631, in __call__
+2026-10-17T10:06:11.070095419Z [err]      return import_from_string(self.app)
+2026-10-17T10:06:11.070098189Z [err]      return self.main(*args, **kwargs)
+2026-10-17T10:06:11.070101609Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 22, in import_from_string
+2026-10-17T10:06:11.070104449Z [err]             ~~~~~~~~~^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:11.070109039Z [err]      raise exc from None
+2026-10-17T10:06:11.070111509Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1552, in main
+2026-10-17T10:06:11.070115959Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/importer.py", line 19, in import_from_string
+2026-10-17T10:06:11.070118449Z [err]      rv = self.invoke(ctx)
+2026-10-17T10:06:11.070122539Z [err]      module = importlib.import_module(module_str)
+2026-10-17T10:06:11.070125049Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 1415, in invoke
+2026-10-17T10:06:11.070129889Z [err]    File "/mise/installs/python/3.13.16/lib/python3.13/importlib/__init__.py", line 88, in import_module
+2026-10-17T10:06:11.070130749Z [err]      return ctx.invoke(self.callback, **ctx.params)
+2026-10-17T10:06:11.070135688Z [err]             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:11.070138438Z [err]      return _bootstrap._gcd_import(name[level:], package, level)
+2026-10-17T10:06:11.070140948Z [err]    File "/app/.venv/lib/python3.13/site-packages/click/core.py", line 910, in invoke
+2026-10-17T10:06:11.070144948Z [err]             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-10-17T10:06:11.070147408Z [err]      return callback(*args, **kwargs)
+2026-10-17T10:06:11.070152648Z [err]    File "<frozen importlib._bootstrap>", line 1404, in _gcd_import
+2026-10-17T10:06:11.070153398Z [err]    File "/app/.venv/lib/python3.13/site-packages/uvicorn/main.py", line 448, in main
+2026-10-17T10:06:11.070160268Z [err]    File "<frozen importlib._bootstrap>", line 1369, in _find_and_load
+2026-10-17T10:06:11.070160958Z [err]      run(
+2026-10-17T10:06:11.070167398Z [err]      ~~~^
+2026-10-17T10:06:11.070168668Z [err]    File "<frozen importlib._bootstrap>", line 1340, in _find_and_load_unlocked
+2026-10-17T10:06:11.070175248Z [err]          app,
+2026-10-17T10:06:11.070177058Z [err]    File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+2026-10-17T10:06:11.070181888Z [err]          ^^^^
+2026-10-17T10:06:11.070183218Z [err]    File "<frozen importlib._bootstrap_external>", line 1027, in exec_module
+2026-10-17T10:06:11.070188618Z [err]      ...<49 lines>...
+2026-10-17T10:06:11.070190988Z [err]    File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+2026-10-17T10:06:11.070194097Z [err]          reset_contextvars=reset_contextvars,
+2026-10-17T10:06:11.070197577Z [err]    File "/app/main.py", line 159, in <module>
+2026-10-17T10:06:11.070200747Z [err]      from routes import router as api_router
+2026-10-17T10:06:11.070203357Z [err]    File "/app/routes.py", line 35, in <module>
+2026-10-17T10:06:11.070206857Z [err]      from auth import get_current_user, get_current_user_optional
+2026-10-17T10:06:11.070211787Z [err]    File "/app/auth.py", line 12, in <module>
+2026-10-17T10:06:11.070215757Z [err]      import bcrypt
+2026-10-17T10:06:11.070219207Z [err]  ModuleNotFoundError: No module named 'bcrypt'
