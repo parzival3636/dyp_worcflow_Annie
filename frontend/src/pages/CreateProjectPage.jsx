@@ -30,6 +30,24 @@ const labelStyle = {
   marginBottom: 8,
 };
 
+const SKILL_OPTIONS = [
+  { value: 'frontend',   label: '🎨 Frontend' },
+  { value: 'backend',    label: '⚙️ Backend' },
+  { value: 'devops',     label: '🚀 DevOps / Deploy' },
+  { value: 'ml',         label: '🤖 ML' },
+  { value: 'agentic_ai', label: '🧠 Agentic AI' },
+  { value: 'security',   label: '🔒 Security' },
+];
+
+const SKILL_LABELS = {
+  frontend: '🎨 Frontend',
+  backend: '⚙️ Backend',
+  devops: '🚀 DevOps',
+  ml: '🤖 ML',
+  agentic_ai: '🧠 Agentic AI',
+  security: '🔒 Security',
+};
+
 export default function CreateProjectPage() {
   const navigate = useNavigate();
 
@@ -43,13 +61,25 @@ export default function CreateProjectPage() {
   const [error, setError] = useState('');
 
   // Team members to invite
-  const [members, setMembers] = useState([{ name: '', email: '' }]);
+  const [members, setMembers] = useState([{ name: '', email: '', skills: [] }]);
   const [inviteResults, setInviteResults] = useState(null); // null | array of results
 
-  const addMember = () => setMembers([...members, { name: '', email: '' }]);
+  const addMember = () => setMembers([...members, { name: '', email: '', skills: [] }]);
   const removeMember = (idx) => setMembers(members.filter((_, i) => i !== idx));
   const updateMember = (idx, field, value) =>
     setMembers(members.map((m, i) => (i === idx ? { ...m, [field]: value } : m)));
+  const toggleMemberSkill = (idx, val) => {
+    setMembers(members.map((m, i) => {
+      if (i !== idx) return m;
+      const current = m.skills || [];
+      const updated = current.includes(val)
+        ? current.filter(s => s !== val)
+        : current.length < 2
+          ? [...current, val]
+          : current;
+      return { ...m, skills: updated };
+    }));
+  };
 
   const handleFillTemplate = () => {
     setName('FleetTrack Cloud');
@@ -59,8 +89,8 @@ export default function CreateProjectPage() {
     setConstraints('Postgres + Redis cache; Docker containerized.');
     setRepoUrl('https://github.com/Ritronn/demo01-platform');
     setMembers([
-      { name: 'Arjun', email: 'arjun@example.com' },
-      { name: 'Meera', email: 'meera@example.com' },
+      { name: 'Arjun', email: 'arjun@example.com', skills: ['backend', 'devops'] },
+      { name: 'Meera', email: 'meera@example.com', skills: ['frontend', 'agentic_ai'] },
     ]);
   };
 
@@ -97,6 +127,7 @@ export default function CreateProjectPage() {
               name: m.name.trim() || undefined,
               email: m.email.trim(),
               role: 'member',
+              skills: m.skills || [],
             })
           )
         );
@@ -104,6 +135,7 @@ export default function CreateProjectPage() {
         const inviteStatus = validMembers.map((m, i) => ({
           name: m.name || m.email.split('@')[0],
           email: m.email,
+          skills: m.skills || [],
           success: results[i].status === 'fulfilled',
           email_sent: results[i].value?.email_sent ?? false,
           detail: results[i].reason?.body?.detail || null,
@@ -173,6 +205,23 @@ export default function CreateProjectPage() {
                     )}
                     {!inv.success && inv.detail && <span style={{ color: '#EF4444' }}>– {inv.detail}</span>}
                   </div>
+                  {inv.skills && inv.skills.length > 0 && (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                      {inv.skills.map(s => (
+                        <span key={s} style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          background: 'rgba(99,102,241,0.15)',
+                          color: '#A5B4FC',
+                          border: '1px solid rgba(99,102,241,0.25)',
+                        }}>
+                          {SKILL_LABELS[s] || s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -347,28 +396,73 @@ export default function CreateProjectPage() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', background: 'rgba(99,102,241,0.15)', color: '#818CF8', fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
                     {idx + 1}
                   </div>
-                  <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div>
-                      <label style={{ ...labelStyle, marginBottom: 4 }}>Full Name</label>
-                      <input
-                        type="text"
-                        value={m.name}
-                        onChange={(e) => updateMember(idx, 'name', e.target.value)}
-                        placeholder="e.g. Arjun Sharma"
-                        style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ ...labelStyle, marginBottom: 4 }}>Email Address <span style={{ color: '#EF4444' }}>*</span></label>
-                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                        <Mail size={13} style={{ position: 'absolute', left: 10, color: 'var(--text-secondary, #8A8F98)', pointerEvents: 'none' }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div>
+                        <label style={{ ...labelStyle, marginBottom: 4 }}>Full Name</label>
                         <input
-                          type="email"
-                          value={m.email}
-                          onChange={(e) => updateMember(idx, 'email', e.target.value)}
-                          placeholder="arjun@example.com"
-                          style={{ ...inputStyle, padding: '8px 12px 8px 30px', fontSize: 13 }}
+                          type="text"
+                          value={m.name}
+                          onChange={(e) => updateMember(idx, 'name', e.target.value)}
+                          placeholder="e.g. Arjun Sharma"
+                          style={{ ...inputStyle, padding: '8px 12px', fontSize: 13 }}
                         />
+                      </div>
+                      <div>
+                        <label style={{ ...labelStyle, marginBottom: 4 }}>Email Address <span style={{ color: '#EF4444' }}>*</span></label>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                          <Mail size={13} style={{ position: 'absolute', left: 10, color: 'var(--text-secondary, #8A8F98)', pointerEvents: 'none' }} />
+                          <input
+                            type="email"
+                            value={m.email}
+                            onChange={(e) => updateMember(idx, 'email', e.target.value)}
+                            placeholder="arjun@example.com"
+                            style={{ ...inputStyle, padding: '8px 12px 8px 30px', fontSize: 13 }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Member Skill Selection */}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary, #8A8F98)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Member Skills <span style={{ textTransform: 'none', fontWeight: 400, color: 'var(--text-muted, #64748B)' }}>(Select up to 2 skills for Annie's task routing)</span>
+                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: (m.skills || []).length > 0 ? '#818CF8' : 'var(--text-secondary, #8A8F98)' }}>
+                          {(m.skills || []).length}/2 selected
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {SKILL_OPTIONS.map(opt => {
+                          const isSelected = (m.skills || []).includes(opt.value);
+                          const isMaxed = !isSelected && (m.skills || []).length >= 2;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => toggleMemberSkill(idx, opt.value)}
+                              disabled={isMaxed}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '5px 11px',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: isSelected ? 600 : 500,
+                                cursor: isMaxed ? 'not-allowed' : 'pointer',
+                                opacity: isMaxed ? 0.4 : 1,
+                                background: isSelected ? 'rgba(99, 102, 241, 0.22)' : 'var(--surface-raised, #171A1E)',
+                                border: `1px solid ${isSelected ? '#6366F1' : 'var(--border, #23272D)'}`,
+                                color: isSelected ? '#A5B4FC' : 'var(--text-secondary, #8A8F98)',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

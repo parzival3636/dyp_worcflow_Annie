@@ -56,16 +56,21 @@ class ProjectCreateRequest(BaseModel):
     repo_full_name: Optional[str] = None
 
 
+VALID_SKILLS = {"frontend", "backend", "devops", "ml", "agentic_ai", "security"}
+
+
 class InviteCreateRequest(BaseModel):
     email: EmailStr
     name: Optional[str] = None
     role: str = "member"
+    skills: Optional[List[str]] = []
 
 
 class InviteAcceptRequest(BaseModel):
     name: Optional[str] = None
     github_login: Optional[str] = None
     telegram_username: Optional[str] = None
+    skills: Optional[List[str]] = None
 
 
 def _generate_project_code() -> str:
@@ -291,19 +296,57 @@ def list_project_invites(code: str):
             raise HTTPException(status_code=404, detail="Project not found")
 
         invites = session.exec(
+
+
             select(Invite).where(Invite.project_id == project.id).order_by(Invite.id.desc())
+
+
         ).all()
+
+
+        members = session.exec(select(Member).where(Member.project_id == project.id)).all()
+
+
+        member_by_email = {m.email.lower(): m for m in members if m.email}
+
+
+
         return [
+
+
             {
+
+
                 "id": inv.id,
+
+
                 "email": inv.email,
+
+
                 "role": inv.role,
+
+
                 "token": inv.token,
+
+
                 "status": inv.status,
+
+
+                "skills": [s for s in (member_by_email[inv.email.lower()].skills or "").split(",") if s] if inv.email.lower() in member_by_email and member_by_email[inv.email.lower()].skills else [],
+
+
                 "created_at": inv.created_at.isoformat() if inv.created_at else None,
+
+
                 "invite_url": f"/invite/{inv.token}",
+
+
             }
+
+
             for inv in invites
+
+
         ]
 
 
@@ -341,22 +384,74 @@ def create_project_invite(
             )
         ).first()
 
+        # Validate and cap skills to max 2
+
+
+        raw_skills = [s.lower().strip() for s in (payload.skills or []) if s]
+
+
+        valid_skills = [s for s in raw_skills if s in VALID_SKILLS][:2]
+
+
+        skills_str = ",".join(valid_skills) if valid_skills else None
+
+
+
         member_name = payload.name or payload.email.split("@")[0]
+
+
         if not existing_member:
+
+
             member = Member(
+
+
                 project_id=project.id,
+
+
                 name=member_name,
+
+
                 email=payload.email.lower().strip(),
+
+
                 role=invite.role,
+
+
                 invite_status="pending",
+
+
                 onboarding_state="new",
+
+
+                skills=skills_str,
+
+
             )
+
+
             session.add(member)
+
+
         else:
-            # Update name if provided
+
+
+            # Update name and skills if provided
+
+
             if payload.name:
+
+
                 existing_member.name = payload.name
-                session.add(existing_member)
+
+
+            if skills_str:
+
+
+                existing_member.skills = skills_str
+
+
+            session.add(existing_member)
 
         # Send invite email if SMTP is configured
         settings = get_settings()
@@ -425,11 +520,15 @@ def get_invite_details(token: str):
         if not project:
             raise HTTPException(status_code=404, detail="Associated project not found")
 
+        member = session.exec(select(Member).where(Member.project_id == project.id, Member.email == invite.email)).first()
+        skills = [s for s in (member.skills or "").split(",") if s] if member and member.skills else []
+
         return {
             "token": invite.token,
             "email": invite.email,
             "role": invite.role,
             "status": invite.status,
+            "skills": skills,
             "project": {
                 "name": project.name,
                 "code": project.code,
@@ -496,6 +595,11 @@ def accept_invite(
                 member.github_login = payload.github_login
             if payload.telegram_username:
                 member.telegram_username = payload.telegram_username
+            if payload.skills:
+                raw_skills = [s.lower().strip() for s in payload.skills if s]
+                valid_skills = [s for s in raw_skills if s in VALID_SKILLS][:2]
+                if valid_skills:
+                    member.skills = ",".join(valid_skills)
             session.add(member)
 
         # Log member joined event
@@ -541,6 +645,7 @@ def get_snapshot(code: str):
                 "telegram_id": m.telegram_id,
                 "invite_status": m.invite_status,
                 "onboarding_state": m.onboarding_state,
+                "skills": [s for s in (m.skills or "").split(",") if s],
                 "color": None, # Computed on frontend by getOwnerColor
             }
             for m in members
@@ -1222,6 +1327,9 @@ def patch_project(code: str, body: ProjectPatchBody):
         }}
 
 
+VALID_SKILLS = {"frontend", "backend", "devops", "ml", "agentic_ai", "security"}
+
+
 class MemberCreateBody(BaseModel):
     name: str
     github_login: Optional[str] = ""
@@ -1229,6 +1337,7 @@ class MemberCreateBody(BaseModel):
     telegram_phone: Optional[str] = ""
     telegram_id: Optional[int] = None
     role: Optional[str] = "member"
+    skills: Optional[List[str]] = []
 
 
 @router.post("/projects/{code}/members")
@@ -1237,6 +1346,11 @@ def add_member(code: str, body: MemberCreateBody):
         project = session.exec(select(Project).where(Project.code == code)).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+
+        # Validate and cap skills to max 2
+        raw_skills = [s.lower().strip() for s in (body.skills or []) if s]
+        valid_skills = [s for s in raw_skills if s in VALID_SKILLS][:2]
+        skills_str = ",".join(valid_skills) if valid_skills else None
 
         member = Member(
             project_id=project.id,
@@ -1247,6 +1361,7 @@ def add_member(code: str, body: MemberCreateBody):
             role=body.role or "member",
             invite_status="accepted" if body.github_login else "pending",
             onboarding_state="done" if body.github_login else "awaiting_github",
+            skills=skills_str,
         )
         session.add(member)
         session.flush()

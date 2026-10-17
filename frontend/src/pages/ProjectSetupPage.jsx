@@ -19,6 +19,24 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const SKILL_OPTIONS = [
+  { value: 'frontend',   label: '🎨 Frontend' },
+  { value: 'backend',    label: '⚙️ Backend' },
+  { value: 'devops',     label: '🚀 DevOps / Deploy' },
+  { value: 'ml',         label: '🤖 ML' },
+  { value: 'agentic_ai', label: '🧠 Agentic AI' },
+  { value: 'security',   label: '🔒 Security' },
+];
+
+const SKILL_LABELS = {
+  frontend: '🎨 Frontend',
+  backend: '⚙️ Backend',
+  devops: '🚀 DevOps',
+  ml: '🤖 ML',
+  agentic_ai: '🧠 Agentic AI',
+  security: '🔒 Security',
+};
+
 export default function ProjectSetupPage() {
   const { code } = useParams();
   const navigate = useNavigate();
@@ -34,7 +52,18 @@ export default function ProjectSetupPage() {
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
+  const [inviteSkills, setInviteSkills] = useState([]);
   const [sendingInvite, setSendingInvite] = useState(false);
+
+  const toggleInviteSkill = (val) => {
+    setInviteSkills(prev =>
+      prev.includes(val)
+        ? prev.filter(s => s !== val)
+        : prev.length < 2
+          ? [...prev, val]
+          : prev
+    );
+  };
 
   const fetchStatus = async () => {
     try {
@@ -88,11 +117,13 @@ export default function ProjectSetupPage() {
         name: inviteName.trim() || undefined,
         email: inviteEmail.trim(),
         role: inviteRole,
+        skills: inviteSkills,
       });
       const label = res.email_sent ? 'Invite email sent!' : `Invite created for ${res.email} (copy link below)`;
       toast.success(label);
       setInviteName('');
       setInviteEmail('');
+      setInviteSkills([]);
       const invs = await apiGet(`/projects/${code}/invites`);
       setInvites(invs);
     } catch (err) {
@@ -289,6 +320,9 @@ export default function ProjectSetupPage() {
               <p style={{ margin: '8px 0 0 0', fontSize: 12, color: 'var(--text-secondary, #8A8F98)' }}>
                 All updates posted in this Telegram group are automatically parsed by Pilot AI and reflected on your project board.
               </p>
+              <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 6, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', fontSize: 12, color: '#A5B4FC' }}>
+                💬 <strong>Direct 2-Minute Task Reviews:</strong> Send <code style={{ color: 'var(--accent, #FF6B3D)', fontWeight: 700 }}>/link {code}</code> to Annie in private DM so she delivers direct reviews to you!
+              </div>
             </div>
           </div>
         ) : (
@@ -322,7 +356,7 @@ export default function ProjectSetupPage() {
                 Step 3
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #E8E6E1)', marginBottom: 4 }}>
-                Send Link Command
+                Link in Group Chat
               </div>
               <div style={{
                 marginTop: 8,
@@ -345,6 +379,18 @@ export default function ProjectSetupPage() {
                   {copiedCmd ? <Check size={14} style={{ color: '#10B981' }} /> : <Copy size={14} />}
                 </button>
               </div>
+            </div>
+
+            <div style={{ background: 'var(--bg, #0A0B0D)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 10, padding: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                Step 4 (Direct DM)
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary, #E8E6E1)', marginBottom: 4 }}>
+                Activate Annie in DM
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary, #8A8F98)', margin: '0 0 6px 0' }}>
+                Open Annie in private DM and send <code style={{ color: 'var(--accent, #FF6B3D)' }}>/link {code}</code> for personal 2-minute reviews!
+              </p>
             </div>
           </div>
         )}
@@ -456,6 +502,49 @@ export default function ProjectSetupPage() {
             <UserPlus size={15} />
             <span>{sendingInvite ? 'Generating...' : 'Generate Invite'}</span>
           </button>
+
+          {/* Member Skills Selector */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary, #8A8F98)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Member Skills <span style={{ textTransform: 'none', fontWeight: 400, color: 'var(--text-muted, #64748B)' }}>(select up to 2 skills for Annie's task routing)</span>
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: inviteSkills.length > 0 ? '#818CF8' : 'var(--text-secondary, #8A8F98)' }}>
+                {inviteSkills.length}/2 selected
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {SKILL_OPTIONS.map(opt => {
+                const isSelected = inviteSkills.includes(opt.value);
+                const isMaxed = !isSelected && inviteSkills.length >= 2;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => toggleInviteSkill(opt.value)}
+                    disabled={isMaxed}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: isSelected ? 600 : 500,
+                      cursor: isMaxed ? 'not-allowed' : 'pointer',
+                      opacity: isMaxed ? 0.4 : 1,
+                      background: isSelected ? 'rgba(99, 102, 241, 0.22)' : 'var(--surface-raised, #171A1E)',
+                      border: `1px solid ${isSelected ? '#6366F1' : 'var(--border, #23272D)'}`,
+                      color: isSelected ? '#A5B4FC' : 'var(--text-secondary, #8A8F98)',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </form>
 
         {invites.length > 0 && (
@@ -479,7 +568,7 @@ export default function ProjectSetupPage() {
                     fontSize: 12
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 600, color: 'var(--text-primary, #E8E6E1)' }}>{inv.email}</span>
                     <span style={{
                       fontSize: 10,
@@ -492,6 +581,23 @@ export default function ProjectSetupPage() {
                     }}>
                       {inv.role}
                     </span>
+                    {inv.skills && inv.skills.length > 0 && (
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                        {inv.skills.map(s => (
+                          <span key={s} style={{
+                            fontSize: 10,
+                            fontWeight: 600,
+                            padding: '2px 7px',
+                            borderRadius: 4,
+                            background: 'rgba(99,102,241,0.15)',
+                            color: '#A5B4FC',
+                            border: '1px solid rgba(99,102,241,0.25)',
+                          }}>
+                            {SKILL_LABELS[s] || s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

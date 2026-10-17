@@ -145,13 +145,14 @@ async def checkin_tick():
                     if settings.quiet_hours_start <= now.hour < settings.quiet_hours_end:
                         return
 
-        cadence = timedelta(hours=settings.checkin_hours)
-        if settings.demo_mode:
+        if getattr(settings, "checkin_minutes", None) and settings.checkin_minutes > 0:
+            cadence = timedelta(minutes=settings.checkin_minutes)
+        elif settings.demo_mode:
             cadence = timedelta(minutes=2)
+        else:
+            cadence = timedelta(hours=settings.checkin_hours)
 
-        cooldown = timedelta(minutes=30)
-        if settings.demo_mode:
-            cooldown = timedelta(seconds=30)
+        cooldown = timedelta(seconds=30) if (settings.demo_mode or getattr(settings, "checkin_minutes", 0) <= 5) else timedelta(minutes=30)
 
         # Collect tasks per member
         member_tasks: dict[int, list[Task]] = {}
@@ -905,7 +906,7 @@ def start_scheduler():
     _scheduler = AsyncIOScheduler()
 
     interval = 60  # seconds
-    if settings.demo_mode:
+    if settings.demo_mode or (getattr(settings, "checkin_minutes", 0) and settings.checkin_minutes <= 5):
         interval = 20
 
     _scheduler.add_job(

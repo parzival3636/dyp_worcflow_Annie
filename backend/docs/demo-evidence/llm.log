@@ -70,3 +70,7 @@
 {"ts": "2026-10-17T00:28:38.892625+00:00", "model": "qwen2.5:7b", "latency_s": 10.063, "system_prompt_len": 1269, "user_prompt_len": 270, "raw_response": null, "error": "Network error: timed out"}
 {"ts": "2026-10-17T00:50:09.246696+00:00", "model": "qwen2.5:7b", "latency_s": 10.062, "system_prompt_len": 4256, "user_prompt_len": 1068, "raw_response": null, "error": "Network error: timed out"}
 {"ts": "2026-10-17T00:50:22.171306+00:00", "model": "qwen2.5:7b", "latency_s": 10.078, "system_prompt_len": 1269, "user_prompt_len": 298, "raw_response": null, "error": "Network error: timed out"}
+{"ts": "2026-10-17T03:06:06.142526+00:00", "model": "qwen2.5:7b", "latency_s": 10.047, "system_prompt_len": 1936, "user_prompt_len": 489, "raw_response": null, "error": "Network error: timed out"}
+{"ts": "2026-10-17T03:09:56.757769+00:00", "model": "qwen2.5:7b", "latency_s": 10.062, "system_prompt_len": 1936, "user_prompt_len": 489, "raw_response": null, "error": "Network error: timed out"}
+{"ts": "2026-10-17T04:00:29.589860+00:00", "model": "qwen2.5:7b", "latency_s": 10.078, "system_prompt_len": 1936, "user_prompt_len": 489, "raw_response": null, "error": "Network error: timed out"}
+{"ts": "2026-10-17T04:09:02.377825+00:00", "model": "qwen2.5:7b", "latency_s": 10.047, "system_prompt_len": 4256, "user_prompt_len": 1303, "raw_response": null, "error": "Network error: timed out"}

@@ -57,6 +57,7 @@ class Settings(BaseSettings):
 
     # Scheduler / behaviour
     checkin_hours: int = 4
+    checkin_minutes: int = 2         # Periodic check-in interval in minutes (default 2 for rapid reviews)
     demo_mode: bool = False
     quiet_hours_start: int = 22
     quiet_hours_end: int = 8

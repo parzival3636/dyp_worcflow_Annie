@@ -124,7 +124,7 @@ def _log_inbound(project_id: int | None, member_id: int | None, text: str,
 
 def _find_member_by_tg(session: Session, telegram_id: int) -> Member | None:
     return session.exec(
-        select(Member).where(Member.telegram_id == telegram_id)
+        select(Member).where(Member.telegram_id == telegram_id).order_by(col(Member.id).desc())
     ).first()
 
 
@@ -185,11 +185,13 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     args = context.args
     tg_user = update.effective_user
 
-    # /start join_<code>
-    if args and args[0].startswith("join_"):
-        code = args[0][5:]
-        await _handle_join(update, context, code, tg_user)
-        return
+    # /start <code> or /start join_<code>
+    if args:
+        raw_arg = args[0].strip()
+        code = raw_arg[5:] if raw_arg.startswith("join_") else raw_arg
+        if code:
+            await _handle_join(update, context, code, tg_user)
+            return
 
     # Plain /start
     await update.message.reply_text(
@@ -334,7 +336,7 @@ async def _handle_join(update: Update, context: ContextTypes.DEFAULT_TYPE, code:
             if not project:
                 return None, "Project not found. Check the code and try again."
 
-            # Check if already a member
+            # Check if already linked to this project
             existing = session.exec(
                 select(Member).where(
                     Member.project_id == project.id,
@@ -342,18 +344,43 @@ async def _handle_join(update: Update, context: ContextTypes.DEFAULT_TYPE, code:
                 )
             ).first()
             if existing:
-                return None, f"You're already a member of *{project.name}*!"
+                return project.name, f"✅ You're already connected to *{project.name}*! Your DM check-ins are active."
 
-            member = Member(
-                project_id=project.id,
-                name=tg_user.full_name,
-                telegram_id=tg_user.id,
-                telegram_username=tg_user.username,
-                role="member",
-                invite_status="accepted",
-                onboarding_state="awaiting_github",
-            )
-            session.add(member)
+            # Check if unlinked member exists (e.g. created from web with skills or invite)
+            candidate = None
+            if tg_user.username:
+                candidate = session.exec(
+                    select(Member).where(
+                        Member.project_id == project.id,
+                        Member.telegram_username.ilike(tg_user.username),
+                    )
+                ).first()
+            if not candidate:
+                candidate = session.exec(
+                    select(Member).where(
+                        Member.project_id == project.id,
+                        (Member.telegram_id == None) | (Member.telegram_id == 0),
+                    ).order_by(col(Member.id).asc())
+                ).first()
+
+            if candidate:
+                member = candidate
+                member.telegram_id = tg_user.id
+                member.telegram_username = tg_user.username or member.telegram_username
+                member.invite_status = "accepted"
+                member.onboarding_state = "done"
+                session.add(member)
+            else:
+                member = Member(
+                    project_id=project.id,
+                    name=tg_user.full_name,
+                    telegram_id=tg_user.id,
+                    telegram_username=tg_user.username,
+                    role="member",
+                    invite_status="accepted",
+                    onboarding_state="done",
+                )
+                session.add(member)
             session.flush()
 
             event = Event(
@@ -827,14 +854,12 @@ async def cmd_followup(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @safe
 async def cmd_linkgroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Link a Telegram group to a project. Must be run in a group."""
-    if not update.message:
+    """Link a Telegram group or private DM to a project."""
+    if not update.message or not update.effective_user:
         return
 
     chat = update.effective_chat
-    if chat.type not in (ChatType.GROUP, ChatType.SUPERGROUP):
-        await update.message.reply_text("Run this command inside your team Telegram group.")
-        return
+    tg_user = update.effective_user
 
     if not context.args:
         await update.message.reply_text("Usage: `/link <project_code>`",
@@ -843,7 +868,72 @@ async def cmd_linkgroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     code = context.args[0].strip()
 
-    def _link():
+    # Case A: Running in Private DM with Annie -> Link user DM to project for direct check-ins
+    if chat.type == ChatType.PRIVATE:
+        def _link_dm():
+            with get_session() as session:
+                project = _find_project_by_code(session, code)
+                if not project:
+                    return f"❌ Project `{code}` not found. Please verify your project code from the web portal."
+
+                # Find if already linked
+                member = session.exec(
+                    select(Member).where(
+                        Member.project_id == project.id,
+                        Member.telegram_id == tg_user.id,
+                    )
+                ).first()
+
+                if not member:
+                    # Match unlinked lead or matching username/name
+                    candidate = None
+                    if tg_user.username:
+                        candidate = session.exec(
+                            select(Member).where(
+                                Member.project_id == project.id,
+                                Member.telegram_username.ilike(tg_user.username),
+                            )
+                        ).first()
+                    if not candidate:
+                        candidate = session.exec(
+                            select(Member).where(
+                                Member.project_id == project.id,
+                                (Member.telegram_id == None) | (Member.telegram_id == 0),
+                            ).order_by(col(Member.id).asc())
+                        ).first()
+
+                    if candidate:
+                        member = candidate
+                        member.telegram_id = tg_user.id
+                        member.telegram_username = tg_user.username or member.telegram_username
+                        member.invite_status = "accepted"
+                        member.onboarding_state = "done"
+                        session.add(member)
+                    else:
+                        member = Member(
+                            project_id=project.id,
+                            name=tg_user.full_name,
+                            telegram_id=tg_user.id,
+                            telegram_username=tg_user.username,
+                            role="member",
+                            invite_status="accepted",
+                            onboarding_state="done",
+                        )
+                        session.add(member)
+                    session.commit()
+
+                return (
+                    f"✅ *Connected to {project.name}!*\n\n"
+                    f"Your private chat with Annie is now linked to project `{code}`.\n"
+                    f"🎯 Annie will ask for task reviews every 2 minutes and deliver personal check-ins directly here!"
+                )
+
+        msg = await asyncio.to_thread(_link_dm)
+        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+        return
+
+    # Case B: Running in Group Chat -> Link group chat to project and auto-link lead
+    def _link_group():
         with get_session() as session:
             project = _find_project_by_code(session, code)
             if not project:
@@ -853,6 +943,19 @@ async def cmd_linkgroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
             project.telegram_status = "connected"
             session.add(project)
 
+            # Auto-link the person who sent /link as the project lead if lead is unlinked
+            lead = session.exec(
+                select(Member).where(
+                    Member.project_id == project.id,
+                    Member.role == "lead",
+                )
+            ).first()
+            if lead and (not lead.telegram_id or lead.telegram_id == 0):
+                lead.telegram_id = tg_user.id
+                lead.telegram_username = tg_user.username
+                lead.invite_status = "accepted"
+                session.add(lead)
+
             # Record event
             event = Event(
                 project_id=project.id,
@@ -861,18 +964,24 @@ async def cmd_linkgroup(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 payload={"chat_id": chat.id, "chat_title": chat.title or "Telegram Group"},
             )
             session.add(event)
+            session.commit()
             return None
 
-    error = await asyncio.to_thread(_link)
+    error = await asyncio.to_thread(_link_group)
     if error:
         await update.message.reply_text(error)
         return
 
+    bot_info = await context.bot.get_me()
+    bot_name = bot_info.username or "Annie"
+
     await update.message.reply_text(
         f"✅ *Group linked to project `{code}`!*\n\n"
-        "Pilot is now actively monitoring this chat for team progress, blockers, and task updates.\n\n"
-        "💡 *Tip for members:* If your Telegram account isn't matched yet, type `/iam <your-email>` to bind your work automatically.",
-        parse_mode=ParseMode.MARKDOWN
+        f"Annie is now actively monitoring this chat for team progress, blockers, and task updates.\n\n"
+        f"👤 Bound *{tg_user.full_name}* to this project.\n\n"
+        f"👉 *To activate direct 2-minute check-ins:* Open Annie in DM [@{bot_name}](https://t.me/{bot_name}) and send `/link {code}`!",
+        parse_mode=ParseMode.MARKDOWN,
+        disable_web_page_preview=True,
     )
 
 
@@ -1071,7 +1180,49 @@ async def dm_text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     tg_user = update.effective_user
-    text = update.message.text or ""
+    text = (update.message.text or "").strip()
+
+    # Intercept commands typed in private DM to prevent treating them as task reviews
+    if text.startswith("/"):
+        parts = text.split()
+        cmd = parts[0].lstrip("/").split("@")[0].lower()
+        context.args = parts[1:]
+        if cmd == "newproject":
+            await cmd_newproject(update, context)
+            return
+        elif cmd == "start":
+            await cmd_start(update, context)
+            return
+        elif cmd == "help":
+            await cmd_help(update, context)
+            return
+        elif cmd == "plan":
+            await cmd_plan(update, context)
+            return
+        elif cmd == "kickoff":
+            await cmd_kickoff(update, context)
+            return
+        elif cmd == "mytasks":
+            await cmd_mytasks(update, context)
+            return
+        elif cmd == "status":
+            await cmd_status(update, context)
+            return
+        elif cmd in ("link", "linkgroup"):
+            await cmd_linkgroup(update, context)
+            return
+        elif cmd == "iam":
+            await cmd_iam(update, context)
+            return
+        elif cmd == "join":
+            await cmd_join(update, context)
+            return
+        elif cmd == "ask":
+            await cmd_ask(update, context)
+            return
+        elif cmd == "report":
+            await cmd_report(update, context)
+            return
 
     # Log inbound
     await asyncio.to_thread(
